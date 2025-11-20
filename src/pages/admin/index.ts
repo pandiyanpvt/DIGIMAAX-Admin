@@ -1,0 +1,13 @@
+// Admin Pages Exports
+export { default as AdminDashboard } from './Dashboard'
+export { default as AdminsManagement } from './AdminsManagement'
+export { default as UsersManagement } from './UsersManagement'
+export { default as BookingsManagement } from './BookingsManagement'
+export { default as CustomersManagement } from './CustomersManagement'
+export { default as ServicesManagement } from './ServicesManagement'
+export { default as PromotionsManagement } from './PromotionsManagement'
+export { default as GalleryManagement } from './GalleryManagement'
+export { default as ReportsAnalytics } from './ReportsAnalytics'
+export { default as AuditLogs } from './AuditLogs'
+export { default as SystemSettings } from './SystemSettings'
+export { default as AdminProfile } from './AdminProfile'
