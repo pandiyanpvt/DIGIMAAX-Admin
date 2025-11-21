@@ -14,6 +14,15 @@ import {
   AuditLogs,
   SystemSettings,
   AdminProfile,
+  ContactMessages,
+  HeaderImages,
+  SocialMediaLinks,
+  ProductCategories,
+  Products,
+  Orders,
+  Payments,
+  UserRoleManagement,
+  CartDetails,
 } from '../../pages/admin'
 import { UserDashboard, MyBookings, UserProfile } from '../../pages/user'
 import { useNavigate } from 'react-router-dom'
@@ -29,17 +38,17 @@ function AdminLayout() {
   const getPageTitle = (menuId: string): string => {
     const titles: Record<string, string> = {
       dashboard: 'Dashboard',
-      admins: 'Admins Management',
-      users: 'Shop Workers Management',
-      bookings: 'Bookings Management',
-      'my-bookings': 'My Bookings',
-      customers: 'Customers Management',
-      services: 'Services Management',
-      promotions: 'Promotions / Offers Management',
-      gallery: 'Gallery / Media Management',
-      reports: 'Reports / Analytics',
-      'audit-logs': 'Audit Logs',
-      settings: 'System Settings',
+      'contact-messages': 'Contact Messages',
+      'header-images': 'Header Images',
+      gallery: 'Gallery',
+      'social-media': 'Social Media Links',
+      'product-categories': 'Product Categories',
+      products: 'Products',
+      orders: 'Orders',
+      payments: 'Payments',
+      users: 'Users Management',
+      'user-roles': 'User Role Management',
+      'cart-details': 'Cart Details',
       profile: 'Profile',
     }
     return titles[menuId] || 'Dashboard'
@@ -52,10 +61,33 @@ function AdminLayout() {
           return <UserDashboard />
         }
         return <AdminDashboard />
-      case 'admins':
-        return <AdminsManagement />
+      // Admin View Pages
+      case 'contact-messages':
+        return <ContactMessages />
+      case 'header-images':
+        return <HeaderImages />
+      case 'gallery':
+        return <GalleryManagement />
+      case 'social-media':
+        return <SocialMediaLinks />
+      case 'product-categories':
+        return <ProductCategories />
+      case 'products':
+        return <Products />
+      case 'orders':
+        return <Orders />
+      case 'payments':
+        return <Payments />
+      // Dev View Pages
       case 'users':
         return <UsersManagement />
+      case 'user-roles':
+        return <UserRoleManagement />
+      case 'cart-details':
+        return <CartDetails />
+      // Legacy Pages
+      case 'admins':
+        return <AdminsManagement />
       case 'bookings':
         return <BookingsManagement />
       case 'my-bookings':
@@ -66,8 +98,6 @@ function AdminLayout() {
         return <ServicesManagement />
       case 'promotions':
         return <PromotionsManagement />
-      case 'gallery':
-        return <GalleryManagement />
       case 'reports':
         return <ReportsAnalytics />
       case 'audit-logs':
@@ -128,8 +158,8 @@ function AdminLayout() {
       <Box
         sx={{
           flex: 1,
-          marginLeft: '120px',
-          width: 'calc(100% - 120px)',
+          marginLeft: '260px',
+          width: 'calc(100% - 260px)',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',

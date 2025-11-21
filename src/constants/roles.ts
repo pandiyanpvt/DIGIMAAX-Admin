@@ -20,7 +20,26 @@ type RolePermissionConfig = {
 
 export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
   superadmin: {
-    navigation: ['dashboard', 'admins', 'users', 'bookings', 'services', 'reports', 'audit-logs', 'settings', 'profile', 'logout'],
+    // Dev View + Admin View
+    navigation: [
+      'dashboard',
+      // Admin View
+      'contact-messages',
+      'header-images',
+      'gallery',
+      'social-media',
+      'product-categories',
+      'products',
+      'orders',
+      'payments',
+      // Dev View
+      'users',
+      'user-roles',
+      'cart-details',
+      // Essential
+      'profile',
+      'logout',
+    ],
     assignableRoles: ['admin', 'user'],
     canManageAdmins: true,
     canManageUsers: true,
@@ -31,18 +50,32 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
     canViewAuditLogs: true,
   },
   admin: {
-    navigation: ['dashboard', 'users', 'bookings', 'customers', 'services', 'promotions', 'gallery', 'reports', 'profile', 'logout'],
-    assignableRoles: ['user'],
+    // Admin View only
+    navigation: [
+      'dashboard',
+      'contact-messages',
+      'header-images',
+      'gallery',
+      'social-media',
+      'product-categories',
+      'products',
+      'orders',
+      'payments',
+      'profile',
+      'logout',
+    ],
+    assignableRoles: [],
     canManageAdmins: false,
-    canManageUsers: true,
-    canManageBookings: true,
-    canManageServices: true,
+    canManageUsers: false,
+    canManageBookings: false,
+    canManageServices: false,
     canAccessSettings: false,
-    canViewReports: true,
+    canViewReports: false,
     canViewAuditLogs: false,
   },
   user: {
-    navigation: ['dashboard', 'my-bookings', 'profile', 'logout'],
+    // No access as per requirements
+    navigation: [],
     assignableRoles: [],
     canManageAdmins: false,
     canManageUsers: false,
