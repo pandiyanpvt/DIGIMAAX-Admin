@@ -2,17 +2,19 @@ import { Box, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 import {
   Dashboard as DashboardIcon,
-  BookOnline as BookingsIcon,
-  BusinessCenter as ServicesIcon,
-  LocalOffer as PromotionsIcon,
   PhotoLibrary as GalleryIcon,
-  Analytics as ReportsIcon,
   Logout as LogoutIcon,
   PeopleAlt as UsersIcon,
-  Settings as SettingsIcon,
-  AdminPanelSettings as AdminsIcon,
-  History as AuditLogsIcon,
   Person as PersonIcon,
+  Email as ContactIcon,
+  Image as ImageIcon,
+  Share as SocialIcon,
+  Category as CategoryIcon,
+  Inventory as ProductIcon,
+  ShoppingCart as OrderIcon,
+  Payment as PaymentIcon,
+  AdminPanelSettings as RoleIcon,
+  ShoppingBag as CartIcon,
 } from '@mui/icons-material'
 
 interface MenuItem {
@@ -29,18 +31,21 @@ interface SidebarProps {
 }
 
 const menuItems: MenuItem[] = [
+  // Admin View
   { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon />, shortLabel: 'Home' },
-  { id: 'admins', label: 'Admins', icon: <AdminsIcon />, shortLabel: 'Admins' },
-  { id: 'users', label: 'Shop Workers', icon: <UsersIcon />, shortLabel: 'Workers' },
-  { id: 'bookings', label: 'Bookings', icon: <BookingsIcon />, shortLabel: 'Book' },
-  { id: 'my-bookings', label: 'My Bookings', icon: <BookingsIcon />, shortLabel: 'My Book' },
-  { id: 'customers', label: 'Customers', icon: <PersonIcon />, shortLabel: 'Customer' },
-  { id: 'services', label: 'Services', icon: <ServicesIcon />, shortLabel: 'Service' },
-  { id: 'promotions', label: 'Promotions', icon: <PromotionsIcon />, shortLabel: 'Offer' },
-  { id: 'gallery', label: 'Gallery', icon: <GalleryIcon />, shortLabel: 'Media' },
-  { id: 'reports', label: 'Reports', icon: <ReportsIcon />, shortLabel: 'Analytic' },
-  { id: 'audit-logs', label: 'Audit Logs', icon: <AuditLogsIcon />, shortLabel: 'Logs' },
-  { id: 'settings', label: 'Settings', icon: <SettingsIcon />, shortLabel: 'Setup' },
+  { id: 'contact-messages', label: 'Contact Messages', icon: <ContactIcon />, shortLabel: 'Contact' },
+  { id: 'header-images', label: 'Header Images', icon: <ImageIcon />, shortLabel: 'Headers' },
+  { id: 'gallery', label: 'Gallery', icon: <GalleryIcon />, shortLabel: 'Gallery' },
+  { id: 'social-media', label: 'Social Media', icon: <SocialIcon />, shortLabel: 'Social' },
+  { id: 'product-categories', label: 'Categories', icon: <CategoryIcon />, shortLabel: 'Categories' },
+  { id: 'products', label: 'Products', icon: <ProductIcon />, shortLabel: 'Products' },
+  { id: 'orders', label: 'Orders', icon: <OrderIcon />, shortLabel: 'Orders' },
+  { id: 'payments', label: 'Payments', icon: <PaymentIcon />, shortLabel: 'Payments' },
+  // Dev View
+  { id: 'users', label: 'Users', icon: <UsersIcon />, shortLabel: 'Users' },
+  { id: 'user-roles', label: 'User Roles', icon: <RoleIcon />, shortLabel: 'Roles' },
+  { id: 'cart-details', label: 'Cart Details', icon: <CartIcon />, shortLabel: 'Carts' },
+  // Essential
   { id: 'profile', label: 'Profile', icon: <PersonIcon />, shortLabel: 'Profile' },
   { id: 'logout', label: 'Logout', icon: <LogoutIcon />, shortLabel: 'Exit' },
 ]
@@ -53,7 +58,7 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
   return (
     <Box
       sx={{
-        width: 120,
+        width: 260,
         height: '100vh',
         background: 'rgba(6, 11, 25, 0.72)',
         backdropFilter: 'blur(20px)',
@@ -62,7 +67,6 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
         boxShadow: '0 20px 60px rgba(2, 6, 23, 0.65)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         pt: 4,
         pb: 4,
         position: 'fixed',
@@ -109,6 +113,7 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          px: 2,
         }}
       >
         <Box
@@ -116,8 +121,8 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
           src="/DIGIMAAX_LOGO-01 1.png"
           alt="DIGIMAAX"
           sx={{
-            maxWidth: '80px',
-            maxHeight: '80px',
+            maxWidth: '100px',
+            maxHeight: '100px',
             objectFit: 'contain',
           }}
         />
@@ -129,16 +134,19 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2,
+          gap: 1,
           width: '100%',
+          px: 2,
           overflowY: 'auto',
           '&::-webkit-scrollbar': {
-            width: '4px',
+            width: '6px',
           },
           '&::-webkit-scrollbar-thumb': {
             backgroundColor: 'rgba(255,255,255,0.3)',
-            borderRadius: '2px',
+            borderRadius: '3px',
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.5)',
+            },
           },
         }}
       >
@@ -147,63 +155,112 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
           return (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05, duration: 0.3 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+              whileHover={{ scale: 1.02, x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ width: '100%' }}
             >
               <Box
                 onClick={() => onMenuChange(item.id)}
                 sx={{
                   display: 'flex',
-                  flexDirection: 'column',
+                  flexDirection: 'row',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 80,
-                  py: 1.3,
-                  px: 2,
-                  borderRadius: 5,
+                  gap: 2,
+                  width: '100%',
+                  py: 1.5,
+                  px: 2.5,
+                  borderRadius: 2,
                   background:
                     isActive
-                      ? 'linear-gradient(135deg, rgba(56,189,248,0.25), rgba(14,165,233,0.15))'
+                      ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.15))'
                       : 'rgba(255,255,255,0.02)',
-                  border: isActive ? '1px solid rgba(125,211,252,0.5)' : '1px solid rgba(255,255,255,0.04)',
+                  border: isActive 
+                    ? '1px solid rgba(102, 126, 234, 0.4)' 
+                    : '1px solid rgba(255,255,255,0.04)',
                   cursor: 'pointer',
-                  boxShadow: isActive ? '0 8px 24px rgba(14, 165, 233, 0.35)' : 'none',
-                  transition: 'all 0.25s ease',
+                  boxShadow: isActive 
+                    ? '0 4px 16px rgba(102, 126, 234, 0.3)' 
+                    : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: isActive ? '4px' : '0px',
+                    background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+                    borderRadius: '0 4px 4px 0',
+                    transition: 'width 0.3s ease',
+                  },
                   '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    transform: 'translateY(-2px)',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    transform: 'translateX(4px)',
+                    '&::before': {
+                      width: '4px',
+                    },
                   },
                 }}
               >
                 <Box
                   sx={{
-                    color: isActive ? 'primary.main' : 'text.primary',
-                    mb: 0.5,
+                    color: isActive ? 'primary.main' : 'rgba(255, 255, 255, 0.7)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    minWidth: 24,
+                    transition: 'color 0.3s ease',
+                    '& svg': {
+                      fontSize: '1.5rem',
+                    },
                   }}
                 >
                   {item.icon}
                 </Box>
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
-                    color: isActive ? 'primary.main' : 'text.primary',
-                    fontWeight: isActive ? 600 : 400,
-                    fontSize: '0.7rem',
-                    textAlign: 'center',
-                    textTransform: 'capitalize',
-                    lineHeight: 1.2,
+                    color: isActive ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.7)',
+                    fontWeight: isActive ? 600 : 500,
+                    fontSize: '0.95rem',
+                    textAlign: 'left',
+                    textTransform: 'none',
+                    lineHeight: 1.4,
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap',
+                    flex: 1,
                   }}
                 >
-                  {item.shortLabel || item.label}
+                  {item.label}
                 </Typography>
+                {isActive && (
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      boxShadow: '0 0 8px rgba(102, 126, 234, 0.6)',
+                      animation: 'pulse 2s ease-in-out infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': {
+                          opacity: 1,
+                          transform: 'scale(1)',
+                        },
+                        '50%': {
+                          opacity: 0.6,
+                          transform: 'scale(0.8)',
+                        },
+                      },
+                    }}
+                  />
+                )}
               </Box>
             </motion.div>
           )

@@ -23,7 +23,6 @@ const initialProfile = {
   location: 'San Francisco, CA',
   status: 'Active',
   memberSince: 'March 2022',
-  badges: ['Security Cleared', 'Full Access', 'Beta Tester'],
 }
 
 function AdminProfile() {
@@ -62,33 +61,41 @@ function AdminProfile() {
             <Box
               sx={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
+                flexWrap: { xs: 'wrap', md: 'nowrap' },
+                alignItems: { xs: 'flex-start', md: 'center' },
                 justifyContent: 'space-between',
                 gap: 3,
-                px: 4,
-                py: 4,
+                px: { xs: 3, md: 4 },
+                py: { xs: 3, md: 4 },
                 color: '#f0f9ff',
               }}
             >
-              <Stack direction="row" spacing={3} alignItems="center">
+              <Stack 
+                direction={{ xs: 'column', sm: 'row' }} 
+                spacing={3} 
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                sx={{ flex: 1, minWidth: 0 }}
+              >
                 <Avatar
                   src=""
                   sx={{
-                    width: 92,
-                    height: 92,
+                    width: { xs: 80, sm: 92 },
+                    height: { xs: 80, sm: 92 },
                     background: 'linear-gradient(135deg, #0ea5e9 0%, #9333ea 100%)',
                     border: '3px solid rgba(241,245,249,0.25)',
+                    flexShrink: 0,
                   }}
                 >
                   {profileData.name.charAt(0)}
                 </Avatar>
-                <Stack spacing={0.5}>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                     {profileData.name}
                   </Typography>
-                  <Typography sx={{ color: '#cbd5f5' }}>{profileData.role}</Typography>
-                  <Stack direction="row" spacing={1}>
+                  <Typography sx={{ color: '#cbd5f5', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                    {profileData.role}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.5 }}>
                     <Chip
                       label={profileData.status}
                       size="small"
@@ -96,6 +103,7 @@ function AdminProfile() {
                         bgcolor: 'rgba(16,185,129,0.2)',
                         color: '#34d399',
                         border: '1px solid rgba(16,185,129,0.4)',
+                        fontSize: '0.75rem',
                       }}
                     />
                     <Chip
@@ -105,18 +113,36 @@ function AdminProfile() {
                         bgcolor: 'rgba(59,130,246,0.2)',
                         color: '#93c5fd',
                         border: '1px solid rgba(59,130,246,0.4)',
+                        fontSize: '0.75rem',
                       }}
                     />
                   </Stack>
                 </Stack>
               </Stack>
-              <Stack direction="row" spacing={2}>
+              <Stack 
+                direction="row" 
+                spacing={2}
+                alignItems="center"
+                sx={{ 
+                  width: { xs: '100%', md: 'auto' },
+                  justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                  mt: { xs: 2, md: 0 },
+                }}
+              >
                 {isEditing ? (
                   <>
-                    <Button variant="contained" onClick={handleSave} sx={{ borderRadius: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      onClick={handleSave} 
+                      sx={{ borderRadius: 2, minWidth: 120 }}
+                    >
                       Save changes
                     </Button>
-                    <Button variant="outlined" onClick={cancelEditing} sx={{ borderRadius: 2 }}>
+                    <Button 
+                      variant="outlined" 
+                      onClick={cancelEditing} 
+                      sx={{ borderRadius: 2, minWidth: 100 }}
+                    >
                       Cancel
                     </Button>
                   </>
@@ -124,7 +150,7 @@ function AdminProfile() {
                   <Button
                     variant="contained"
                     startIcon={<EditIcon />}
-                    sx={{ borderRadius: 2 }}
+                    sx={{ borderRadius: 2, minWidth: 140 }}
                     onClick={startEditing}
                   >
                     Update profile
@@ -135,6 +161,7 @@ function AdminProfile() {
                     color: '#f0f9ff',
                     border: '1px solid rgba(241,245,249,0.35)',
                     borderRadius: 2,
+                    ml: { xs: 'auto', md: 0 },
                   }}
                 >
                   <MoreIcon />
@@ -145,10 +172,10 @@ function AdminProfile() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <Card
             sx={{
-              p: 3,
+              p: { xs: 2.5, sm: 3 },
               borderRadius: 3,
               background: 'rgba(15, 23, 42, 0.9)',
               border: '1px solid rgba(59, 130, 246, 0.15)',
@@ -156,14 +183,37 @@ function AdminProfile() {
               height: '100%',
             }}
           >
-              <Stack spacing={1.5}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <EmailIcon sx={{ fontSize: 20, color: '#38bdf8' }} />
+            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: '#e2e8f0', fontSize: '1.1rem' }}>
+              Contact Information
+            </Typography>
+            <Stack spacing={2.5}>
+              <Stack 
+                direction="row" 
+                spacing={2} 
+                alignItems={isEditing ? 'flex-start' : 'center'}
+                sx={{ width: '100%' }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <EmailIcon sx={{ fontSize: 22, color: '#38bdf8' }} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   {isEditing ? (
                     <TextField
                       label="Email"
                       variant="filled"
                       size="small"
+                      fullWidth
                       value={draftProfile.email}
                       onChange={(event) =>
                         setDraftProfile((prev) => ({
@@ -171,21 +221,49 @@ function AdminProfile() {
                           email: event.target.value,
                         }))
                       }
-                      sx={{ minWidth: 220, backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
+                      sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
                       InputLabelProps={{ sx: { color: '#cbd5f5' } }}
                       InputProps={{ sx: { color: '#f8fafc' } }}
                     />
                   ) : (
-                    <Typography variant="body2">{profileData.email}</Typography>
+                    <>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mb: 0.5 }}>
+                        Email
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#f8fafc', wordBreak: 'break-word' }}>
+                        {profileData.email}
+                      </Typography>
+                    </>
                   )}
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <PhoneIcon sx={{ fontSize: 20, color: '#4ade80' }} />
+                </Box>
+              </Stack>
+              <Stack 
+                direction="row" 
+                spacing={2} 
+                alignItems={isEditing ? 'flex-start' : 'center'}
+                sx={{ width: '100%' }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <PhoneIcon sx={{ fontSize: 22, color: '#4ade80' }} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   {isEditing ? (
                     <TextField
                       label="Phone"
                       variant="filled"
                       size="small"
+                      fullWidth
                       value={draftProfile.phone}
                       onChange={(event) =>
                         setDraftProfile((prev) => ({
@@ -193,21 +271,49 @@ function AdminProfile() {
                           phone: event.target.value,
                         }))
                       }
-                      sx={{ minWidth: 220, backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
+                      sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
                       InputLabelProps={{ sx: { color: '#cbd5f5' } }}
                       InputProps={{ sx: { color: '#f8fafc' } }}
                     />
                   ) : (
-                    <Typography variant="body2">{profileData.phone}</Typography>
+                    <>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mb: 0.5 }}>
+                        Phone
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#f8fafc' }}>
+                        {profileData.phone}
+                      </Typography>
+                    </>
                   )}
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <LocationOn sx={{ fontSize: 20, color: '#f87171' }} />
+                </Box>
+              </Stack>
+              <Stack 
+                direction="row" 
+                spacing={2} 
+                alignItems={isEditing ? 'flex-start' : 'center'}
+                sx={{ width: '100%' }}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    backgroundColor: 'rgba(248, 113, 113, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <LocationOn sx={{ fontSize: 22, color: '#f87171' }} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   {isEditing ? (
                     <TextField
                       label="Location"
                       variant="filled"
                       size="small"
+                      fullWidth
                       value={draftProfile.location}
                       onChange={(event) =>
                         setDraftProfile((prev) => ({
@@ -215,55 +321,23 @@ function AdminProfile() {
                           location: event.target.value,
                         }))
                       }
-                      sx={{ minWidth: 220, backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
+                      sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
                       InputLabelProps={{ sx: { color: '#cbd5f5' } }}
                       InputProps={{ sx: { color: '#f8fafc' } }}
                     />
                   ) : (
-                    <Typography variant="body2">{profileData.location}</Typography>
+                    <>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mb: 0.5 }}>
+                        Location
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#f8fafc' }}>
+                        {profileData.location}
+                      </Typography>
+                    </>
                   )}
-                </Stack>
+                </Box>
               </Stack>
-            <Divider sx={{ my: 2, borderColor: 'rgba(148,163,184,0.2)' }} />
-            <Typography variant="subtitle2" sx={{ color: '#94a3b8', mb: 1 }}>
-              Badges
-            </Typography>
-            {isEditing ? (
-              <TextField
-                fullWidth
-                label="Badges (comma separated)"
-                variant="filled"
-                size="small"
-                value={draftProfile.badges.join(', ')}
-                onChange={(event) =>
-                  setDraftProfile((prev) => ({
-                    ...prev,
-                    badges: event.target.value
-                      .split(',')
-                      .map((badge) => badge.trim())
-                      .filter(Boolean),
-                  }))
-                }
-                sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
-                InputLabelProps={{ sx: { color: '#cbd5f5' } }}
-                InputProps={{ sx: { color: '#f8fafc' } }}
-              />
-            ) : (
-              <Stack direction="row" flexWrap="wrap" gap={1}>
-                {profileData.badges.map((badge) => (
-                  <Chip
-                    key={badge}
-                    label={badge}
-                    size="small"
-                    sx={{
-                      backgroundColor: 'rgba(96, 165, 250, 0.2)',
-                      border: '1px solid rgba(96, 165, 250, 0.4)',
-                      color: '#bfdbfe',
-                    }}
-                  />
-                ))}
-              </Stack>
-            )}
+            </Stack>
           </Card>
         </Grid>
 

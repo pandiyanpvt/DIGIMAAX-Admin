@@ -33,6 +33,16 @@ function App() {
       }}
     >
       <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated() ? (
+              <AdminLayout />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
