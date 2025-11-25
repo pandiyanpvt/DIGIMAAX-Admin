@@ -26,6 +26,11 @@ export interface UpdateUserRolePayload {
 export async function getAllUserRoles(): Promise<UserRole[]> {
   try {
     const { data } = await apiClient.get('/api/user-role/getAll')
+    // Backend returns { message, count, userRoles }
+    if (data?.userRoles && Array.isArray(data.userRoles)) {
+      return data.userRoles
+    }
+    // Fallback for direct array response
     return Array.isArray(data) ? data : []
   } catch (error: any) {
     console.error('Error fetching user roles:', error)

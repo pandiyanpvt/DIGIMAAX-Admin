@@ -33,7 +33,7 @@ type RolePermissionConfig = {
 
 export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
   superadmin: {
-    // Dev View + Admin View
+    // Dev View + Admin View (Developer login - access to all pages)
     navigation: [
       'dashboard',
       // Admin View
@@ -46,11 +46,10 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
       'orders',
       'payments',
       // Dev View
-      'users',
       'user-roles',
       'cart-details',
+      'user-logs',
       // Essential
-      'profile',
       'logout',
     ],
     assignableRoles: ['admin', 'user'],
@@ -74,7 +73,6 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
       'products',
       'orders',
       'payments',
-      'profile',
       'logout',
     ],
     assignableRoles: [],
@@ -109,7 +107,8 @@ export const resolveUserRole = (role?: string | null, roleId?: number | null): U
 
   const normalizedRole = normalizeRoleText(role)
 
-  if (normalizedRole === 'developer' || normalizedRole === 'superadmin' || normalizedRole === 'super admin') {
+  // Handle developer roles (including typo "devoloper")
+  if (normalizedRole === 'developer' || normalizedRole === 'devoloper' || normalizedRole === 'superadmin' || normalizedRole === 'super admin' || normalizedRole === 'super_admin') {
     return 'superadmin'
   }
   if (normalizedRole === 'booking' || normalizedRole === 'user') {

@@ -1,5 +1,6 @@
 // Admin Pages Exports
 export { default as AdminDashboard } from './Dashboard'
+export { default as UserLogs } from './UserLogs'
 export { default as AdminsManagement } from './AdminsManagement'
 export { default as UsersManagement } from '../developer/UsersManagement'
 export { default as BookingsManagement } from './BookingsManagement'
@@ -10,7 +11,6 @@ export { default as GalleryManagement } from './GalleryManagement'
 export { default as ReportsAnalytics } from './ReportsAnalytics'
 export { default as AuditLogs } from './AuditLogs'
 export { default as SystemSettings } from './SystemSettings'
-export { default as AdminProfile } from './AdminProfile'
 // New Admin View Pages
 export { default as ContactMessages } from './ContactMessages'
 export { default as HeaderImages } from './HeaderImages'

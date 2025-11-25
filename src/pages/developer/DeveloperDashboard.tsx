@@ -114,7 +114,7 @@ function DeveloperDashboard() {
   )
 
   return (
-    <PageContainer sx={{ p: 4, minHeight: '100vh' }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 }, minHeight: '100vh' }}>
       <Stack spacing={3}>
         <Card
           sx={{

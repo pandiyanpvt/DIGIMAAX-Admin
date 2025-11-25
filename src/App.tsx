@@ -3,6 +3,8 @@ import type { ReactElement } from 'react'
 import { AdminLayout } from './components/admin'
 import Login from './pages/auth/Login'
 import Logout from './pages/auth/Logout'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import { getCurrentUserRole } from './constants/roles'
 
 const isAuthenticated = () => {
@@ -16,34 +18,20 @@ const isAuthenticated = () => {
   }
 }
 
-// Get dashboard route based on user role
-const getDashboardRoute = (): string => {
-  if (!isAuthenticated()) return '/login'
-  
-  const role = getCurrentUserRole()
-  if (role === 'superadmin') {
-    return '/developer-dashboard'
-  }
-  if (role === 'admin') {
-    return '/admin-dashboard'
-  }
-
-  // User role (userRoleId = 2) - not allowed in admin panel, redirect to login
-  return '/login'
-}
-
 function ProtectedRoute({ children }: { children: ReactElement }) {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />
   }
 
   const role = getCurrentUserRole()
-  // Only admin and developer (superadmin) can access this panel
+  // Allow admin and developer (superadmin) to access this panel
+  // Block user role - only admin and developer can access
   if (role === 'user') {
     // Clear auth and redirect to login - user role not allowed
     localStorage.removeItem('adminAuth')
     return <Navigate to="/login" replace />
   }
+  // Admin and developer (superadmin) are allowed
   return children
 }
 
@@ -56,33 +44,20 @@ function App() {
       }}
     >
       <Routes>
-        {/* Public Auth Routes - Only Login and Logout for Admin/Developer Panel */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/logout" element={<Logout />} />
-
-        {/* Root path - always show login first, then redirect if authenticated */}
+        {/* Root path - always redirect to login page first */}
         <Route
           path="/"
-          element={
-            isAuthenticated() ? (
-              <Navigate to={getDashboardRoute()} replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          element={<Navigate to="/login" replace />}
         />
+        
+        {/* Public Auth Routes - Login, Logout, Forgot Password, Reset Password */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         {/* Protected Routes - Admin Dashboard */}
         <Route
           path="/admin-dashboard"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        />
-        {/* Protected Routes - Super Admin Dashboard */}
-        <Route
-          path="/developer-dashboard"
           element={
             <ProtectedRoute>
               <AdminLayout />
@@ -167,14 +142,6 @@ function App() {
 
         {/* Protected Routes - Dev/Admin Management Pages */}
         <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/user-roles"
           element={
             <ProtectedRoute>
@@ -184,6 +151,14 @@ function App() {
         />
         <Route
           path="/cart-details"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user-logs"
           element={
             <ProtectedRoute>
               <AdminLayout />
@@ -277,16 +252,10 @@ function App() {
           }
         />
 
-        {/* Default redirect for authenticated users */}
+        {/* Default redirect to login for unknown routes */}
         <Route
           path="/*"
-          element={
-            isAuthenticated() ? (
-              <Navigate to={getDashboardRoute()} replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          element={<Navigate to="/login" replace />}
         />
       </Routes>
     </BrowserRouter>

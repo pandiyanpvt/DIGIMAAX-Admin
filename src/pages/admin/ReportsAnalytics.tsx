@@ -128,7 +128,7 @@ function ReportsAnalytics() {
   const activeReport = reportConfigs[reportType]
 
   return (
-    <PageContainer sx={{ p: 4 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

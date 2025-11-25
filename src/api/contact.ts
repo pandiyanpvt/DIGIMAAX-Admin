@@ -1,5 +1,18 @@
 import apiClient from './client'
 
+export interface ContactReply {
+  id: number
+  contact_id: number
+  subject: string
+  body: string
+  sent_to_email: string
+  sent_by_user_id: number | null
+  created_at: string
+  firstName?: string | null
+  lastName?: string | null
+  admin_email?: string | null
+}
+
 export interface ContactMessage {
   id: number
   fullName: string
@@ -10,6 +23,7 @@ export interface ContactMessage {
   message?: string
   created_at: string
   updated_at: string
+  replies?: ContactReply[]
 }
 
 export interface CreateContactPayload {
@@ -110,6 +124,32 @@ export async function deleteContactMessage(id: number): Promise<void> {
     await apiClient.delete(`/api/contact/delete/${id}`)
   } catch (error: any) {
     console.error('Error deleting contact message:', error)
+    throw error
+  }
+}
+
+// Reply to contact message (admin only)
+export interface ReplyToContactPayload {
+  subject: string
+  body: string
+}
+
+export interface ReplyToContactResponse {
+  message: string
+  sentTo: string
+  subject: string
+  reply: ContactReply
+}
+
+export async function replyToContact(
+  id: number,
+  payload: ReplyToContactPayload
+): Promise<ReplyToContactResponse> {
+  try {
+    const { data } = await apiClient.post<ReplyToContactResponse>(`/api/contact/reply/${id}`, payload)
+    return data
+  } catch (error: any) {
+    console.error('Error replying to contact:', error)
     throw error
   }
 }

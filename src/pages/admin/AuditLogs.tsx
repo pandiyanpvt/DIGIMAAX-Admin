@@ -89,8 +89,8 @@ function AuditLogs() {
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <HistoryIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -98,13 +98,14 @@ function AuditLogs() {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
           <TextField
             placeholder="Search logs..."
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ flex: 1 }}
+            sx={{ flex: { xs: 'none', sm: 1 }, minWidth: { xs: '100%', sm: 'auto' } }}
+            fullWidth={false}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -136,8 +137,8 @@ function AuditLogs() {
           </Typography>
         )}
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Timestamp</TableCell>

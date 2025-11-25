@@ -195,15 +195,15 @@ function UsersManagement() {
 
   if (loading) {
     return (
-      <PageContainer sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 }, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress />
       </PageContainer>
     )
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Shop Workers Management

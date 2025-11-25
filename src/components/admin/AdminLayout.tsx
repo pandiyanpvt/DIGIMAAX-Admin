@@ -1,10 +1,9 @@
-import { Box, Typography } from '@mui/material'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { AdminSidebar, AdminHeaderBar } from './index'
 import {
   AdminDashboard,
   AdminsManagement,
-  UsersManagement,
   BookingsManagement,
   CustomersManagement,
   ServicesManagement,
@@ -13,7 +12,6 @@ import {
   ReportsAnalytics,
   AuditLogs,
   SystemSettings,
-  AdminProfile,
   ContactMessages,
   HeaderImages,
   SocialMediaLinks,
@@ -23,27 +21,36 @@ import {
   Payments,
   UserRoleManagement,
   CartDetails,
+  UserLogs,
 } from '../../pages/admin'
-import { DeveloperDashboard } from '../../pages/developer'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getCurrentUserRole, rolePermissions } from '../../constants/roles'
 
 function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [selectedMenu, setSelectedMenu] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const userRole = getCurrentUserRole()
   const permissions = rolePermissions[userRole]
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false)
+    }
+  }, [location.pathname, isMobile])
 
   // Sync selectedMenu with URL path
   useEffect(() => {
     const path = location.pathname
     // Remove leading slash and use as menu ID
-    // Handle dashboard routes (admin-dashboard, developer-dashboard, super-admin-dashboard, dashboard)
+    // Handle dashboard routes (admin-dashboard, super-admin-dashboard, dashboard)
     const menuId = path === '/' || 
                    path === '/dashboard' || 
                    path === '/admin-dashboard' || 
-                   path === '/developer-dashboard' ||
                    path === '/super-admin-dashboard' 
                    ? 'dashboard' 
                    : path.slice(1)
@@ -67,9 +74,9 @@ function AdminLayout() {
       products: 'Products',
       orders: 'Orders',
       payments: 'Payments',
-      users: 'Users Management',
       'user-roles': 'User Role Management',
       'cart-details': 'Cart Details',
+      'user-logs': 'User Login Logs',
       admins: 'Admins Management',
       bookings: 'Bookings Management',
       'my-bookings': 'My Bookings',
@@ -79,7 +86,6 @@ function AdminLayout() {
       reports: 'Reports & Analytics',
       'audit-logs': 'Audit Logs',
       settings: 'System Settings',
-      profile: 'Profile',
     }
     return titles[menuId] || 'Dashboard'
   }
@@ -87,9 +93,6 @@ function AdminLayout() {
   const renderContent = () => {
     switch (selectedMenu) {
       case 'dashboard':
-        if (userRole === 'superadmin') {
-          return <DeveloperDashboard />
-        }
         return <AdminDashboard />
       // Admin View Pages
       case 'contact-messages':
@@ -109,12 +112,12 @@ function AdminLayout() {
       case 'payments':
         return <Payments />
       // Dev View Pages
-      case 'users':
-        return <UsersManagement />
       case 'user-roles':
         return <UserRoleManagement />
       case 'cart-details':
         return <CartDetails />
+      case 'user-logs':
+        return <UserLogs />
       // Legacy Pages
       case 'admins':
         return <AdminsManagement />
@@ -134,8 +137,6 @@ function AdminLayout() {
         return <AuditLogs />
       case 'settings':
         return <SystemSettings />
-      case 'profile':
-        return <AdminProfile />
       case 'logout':
         // Don't navigate during render - handle in useEffect
         return null
@@ -153,9 +154,7 @@ function AdminLayout() {
       // Navigate to the corresponding route
       if (menuId === 'dashboard' || menuId === '/') {
         // Navigate to the appropriate dashboard based on role
-        if (userRole === 'superadmin') {
-          navigate('/developer-dashboard')
-        } else if (userRole === 'admin') {
+        if (userRole === 'admin') {
           navigate('/admin-dashboard')
         } else {
           navigate('/dashboard')
@@ -175,9 +174,7 @@ function AdminLayout() {
     setSelectedMenu(menuId)
     if (menuId === 'dashboard' || menuId === '/') {
       // Navigate to the appropriate dashboard based on role
-      if (userRole === 'superadmin') {
-        navigate('/developer-dashboard')
-      } else if (userRole === 'admin') {
+      if (userRole === 'admin') {
         navigate('/admin-dashboard')
       } else {
         navigate('/dashboard')
@@ -212,22 +209,41 @@ function AdminLayout() {
         selectedMenu={selectedMenu} 
         onMenuChange={handleMenuChange}
         visibleMenuIds={permissions.navigation}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isMobile={isMobile}
       />
+      {isMobile && sidebarOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+          }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       <Box
         sx={{
           flex: 1,
-          marginLeft: '260px',
-          width: 'calc(100% - 260px)',
+          marginLeft: { xs: 0, md: '260px' },
+          width: { xs: '100%', md: 'calc(100% - 260px)' },
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
           zIndex: 1,
+          transition: 'margin-left 0.3s ease',
         }}
       >
         <AdminHeaderBar 
           pageTitle={getPageTitle(selectedMenu)} 
           onMenuChange={handleMenuChange}
           canAccessSettings={permissions.canAccessSettings}
+          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         />
         <Box
           sx={{

@@ -35,7 +35,9 @@ import {
   getAllContactMessages,
   getContactMessageById,
   deleteContactMessage,
+  replyToContact,
   type ContactMessage,
+  type ContactReply,
 } from '../../api/contact'
 
 interface DisplayMessage extends ContactMessage {
@@ -50,6 +52,10 @@ function ContactMessages() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false)
+  const [replySubject, setReplySubject] = useState('')
+  const [replyBody, setReplyBody] = useState('')
+  const [replying, setReplying] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
 
@@ -152,8 +158,43 @@ function ContactMessages() {
     }
   }
 
-  const handleReply = (email: string) => {
-    window.location.href = `mailto:${email}`
+  const handleReply = (message: ContactMessage) => {
+    setSelectedMessage(message)
+    setReplySubject(message.subject ? `Re: ${message.subject}` : 'Re: Your Inquiry')
+    setReplyBody('')
+    setReplyDialogOpen(true)
+  }
+
+  const handleSendReply = async () => {
+    if (!selectedMessage || !replySubject.trim() || !replyBody.trim()) {
+      setError('Subject and message are required')
+      return
+    }
+
+    try {
+      setReplying(true)
+      setError(null)
+      const response = await replyToContact(selectedMessage.id, {
+        subject: replySubject.trim(),
+        body: replyBody.trim(),
+      })
+      setSuccessMessage(`Reply sent successfully to ${response.sentTo}`)
+      setReplyDialogOpen(false)
+      setReplySubject('')
+      setReplyBody('')
+      // Refresh the message to get updated replies
+      const updatedMessage = await getContactMessageById(selectedMessage.id)
+      setSelectedMessage(updatedMessage)
+      // Update in messages list
+      setMessages(
+        messages.map((m) => (m.id === selectedMessage.id ? updatedMessage : m))
+      )
+    } catch (err: any) {
+      console.error('Error sending reply:', err)
+      setError(err?.response?.data?.message || 'Failed to send reply')
+    } finally {
+      setReplying(false)
+    }
   }
 
   const handleExport = () => {
@@ -184,9 +225,9 @@ function ContactMessages() {
   const unreadCount = messages.filter((m) => !isRead(m.id)).length
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
               Contact Messages
@@ -211,35 +252,38 @@ function ContactMessages() {
           </Button>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
           <TextField
             placeholder="Search messages..."
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: { xs: '100%', sm: 300 } }}
+            fullWidth={false}
           />
-          <Button
-            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
-            onClick={() => setStatusFilter('all')}
-            size="small"
-          >
-            All
-          </Button>
-          <Button
-            variant={statusFilter === 'unread' ? 'contained' : 'outlined'}
-            onClick={() => setStatusFilter('unread')}
-            size="small"
-          >
-            Unread
-          </Button>
-          <Button
-            variant={statusFilter === 'read' ? 'contained' : 'outlined'}
-            onClick={() => setStatusFilter('read')}
-            size="small"
-          >
-            Read
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button
+              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('all')}
+              size="small"
+            >
+              All
+            </Button>
+            <Button
+              variant={statusFilter === 'unread' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('unread')}
+              size="small"
+            >
+              Unread
+            </Button>
+            <Button
+              variant={statusFilter === 'read' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('read')}
+              size="small"
+            >
+              Read
+            </Button>
+          </Box>
         </Box>
 
         {loading ? (
@@ -251,8 +295,8 @@ function ContactMessages() {
             {error}
           </Alert>
         ) : (
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>From</TableCell>
@@ -322,7 +366,7 @@ function ContactMessages() {
                           )}
                           <IconButton
                             size="small"
-                            onClick={() => handleReply(message.emailAddress)}
+                            onClick={() => handleReply(message)}
                             color="primary"
                           >
                             <ReplyIcon fontSize="small" />
@@ -346,7 +390,19 @@ function ContactMessages() {
       </Card>
 
       {/* View Details Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={viewDialogOpen} 
+        onClose={() => setViewDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        fullScreen={false}
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+            maxHeight: { xs: '95vh', sm: '90vh' },
+          }
+        }}
+      >
         <DialogTitle>Message Details</DialogTitle>
         <DialogContent>
           {selectedMessage && (
@@ -407,6 +463,35 @@ function ContactMessages() {
                   </Typography>
                 </Box>
               )}
+              {selectedMessage.replies && selectedMessage.replies.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Previous Replies ({selectedMessage.replies.length})
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {selectedMessage.replies.map((reply: ContactReply) => (
+                      <Card key={reply.id} sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {reply.subject}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(reply.created_at).toLocaleString()}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+                          {reply.body}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Sent by: {reply.firstName && reply.lastName
+                            ? `${reply.firstName} ${reply.lastName}`
+                            : reply.admin_email || 'System'}
+                        </Typography>
+                      </Card>
+                    ))}
+                  </Box>
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>
@@ -414,7 +499,7 @@ function ContactMessages() {
           <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
           {selectedMessage && (
             <Button
-              onClick={() => handleReply(selectedMessage.emailAddress)}
+              onClick={() => handleReply(selectedMessage)}
               variant="contained"
               startIcon={<ReplyIcon />}
               sx={{ backgroundColor: 'primary.main' }}
@@ -422,6 +507,63 @@ function ContactMessages() {
               Reply
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Reply Dialog */}
+      <Dialog 
+        open={replyDialogOpen} 
+        onClose={() => setReplyDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+          }
+        }}
+      >
+        <DialogTitle>Reply to {selectedMessage?.fullName}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              label="Subject"
+              fullWidth
+              value={replySubject}
+              onChange={(e) => setReplySubject(e.target.value)}
+              required
+            />
+            <TextField
+              label="Message"
+              fullWidth
+              multiline
+              rows={6}
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              required
+              placeholder="Type your reply message here..."
+            />
+            {selectedMessage && (
+              <Box sx={{ p: 1.5, backgroundColor: 'rgba(0, 0, 0, 0.02)', borderRadius: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  To: {selectedMessage.emailAddress}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReplyDialogOpen(false)} disabled={replying}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSendReply}
+            variant="contained"
+            disabled={replying || !replySubject.trim() || !replyBody.trim()}
+            startIcon={<ReplyIcon />}
+            sx={{ backgroundColor: 'primary.main' }}
+          >
+            {replying ? 'Sending...' : 'Send Reply'}
+          </Button>
         </DialogActions>
       </Dialog>
 
