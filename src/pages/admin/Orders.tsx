@@ -193,9 +193,9 @@ function Orders() {
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Orders Management
           </Typography>
@@ -210,13 +210,14 @@ function Orders() {
           </Button>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
           <TextField
             placeholder="Search orders..."
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: { xs: '100%', sm: 300 } }}
+            fullWidth={false}
           />
           <TextField
             select
@@ -227,6 +228,8 @@ function Orders() {
               native: true,
             }}
             size="small"
+            sx={{ minWidth: { xs: '100%', sm: 150 } }}
+            fullWidth={false}
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
@@ -246,8 +249,8 @@ function Orders() {
             {error}
           </Alert>
         ) : (
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 700 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Order Number</TableCell>

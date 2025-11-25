@@ -16,6 +16,7 @@ import {
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material'
 import { Link, useNavigate } from 'react-router-dom'
 import { loginAdmin, loginDeveloper } from '../../api/auth'
+import { getAllUserRoles } from '../../api/userRoles'
 import { getCurrentUserRole } from '../../constants/roles'
 
 export default function Login() {
@@ -39,30 +40,72 @@ export default function Login() {
     try {
       let loginResult
       
-      // Try admin login first
+      // Try admin login first (for admin role)
       try {
         loginResult = await loginAdmin({ email: email.trim(), password })
       } catch (adminError: any) {
-        // If admin login fails with "not an admin" error, try developer login
-        if (adminError?.response?.data?.message?.includes('not an admin') || 
-            adminError?.response?.data?.message?.includes('Invalid credentials or not an admin')) {
+        const errorMessage = adminError?.response?.data?.message || adminError?.message || ''
+        
+        // If admin login fails with "not an admin" error, try developer login (for developer/superadmin role)
+        if (errorMessage.includes('not an admin') || 
+            errorMessage.includes('Invalid credentials or not an admin')) {
+          try {
+            // Try developer login for superadmin/developer role
+            loginResult = await loginDeveloper({ email: email.trim(), password })
+          } catch (devError: any) {
+            // Both admin and developer login failed - show the most specific error
+            const devErrorMessage = devError?.response?.data?.message || devError?.message || ''
+            if (devErrorMessage.includes('not a developer') || devErrorMessage.includes('not an admin')) {
+              // User doesn't have the right role
+              throw new Error('Access denied. This account does not have admin or developer privileges.')
+            } else if (devErrorMessage.includes('not verified') || devErrorMessage.includes('Email address not verified')) {
+              throw new Error('Email address not verified. Please verify your account before logging in.')
+            } else {
+              // Show the developer error if it's more specific, otherwise show admin error
+              throw devError
+            }
+          }
+        } else if (errorMessage.includes('not verified') || errorMessage.includes('Email address not verified')) {
+          // Email not verified - don't try developer login
+          throw new Error('Email address not verified. Please verify your account before logging in.')
+        } else if (errorMessage.includes('Invalid credentials')) {
+          // Invalid credentials - try developer login as fallback (user might be a developer)
           try {
             loginResult = await loginDeveloper({ email: email.trim(), password })
           } catch (devError: any) {
-            // Developer login also failed
-            throw devError
+            // Both failed - show credentials error
+            throw new Error('Invalid email or password. Please check your credentials and try again.')
           }
         } else {
-          // Other admin login error
-          throw adminError
+          // Other admin login error - try developer login as fallback
+          try {
+            loginResult = await loginDeveloper({ email: email.trim(), password })
+          } catch (devError: any) {
+            // Both failed - show the original admin error
+            throw adminError
+          }
         }
       }
       
       setSuccess(loginResult?.message || 'Login successful. Redirecting...')
+      
+      // Fetch user roles from backend after successful login
+      try {
+        const userRoles = await getAllUserRoles()
+        console.log('User roles fetched:', userRoles)
+        // Store user roles in localStorage for later use if needed
+        if (userRoles && userRoles.length > 0) {
+          localStorage.setItem('userRoles', JSON.stringify(userRoles))
+        }
+      } catch (roleError: any) {
+        console.warn('Could not fetch user roles:', roleError?.response?.data?.message || roleError?.message)
+        // Don't block login if role fetch fails
+      }
+      
       setTimeout(() => {
         const role = getCurrentUserRole()
 
-        // Only admin and developer can access this panel
+        // Allow admin and developer (superadmin) to access this panel
         if (role === 'user') {
           setError('Access denied. This panel is only for administrators and developers.')
           // Clear auth token
@@ -70,7 +113,8 @@ export default function Login() {
           return
         }
 
-        const dashboardRoute = role === 'superadmin' ? '/developer-dashboard' : '/admin-dashboard'
+        // Both admin and developer can access - redirect to dashboard
+        const dashboardRoute = '/admin-dashboard'
         navigate(dashboardRoute, { replace: true })
         // Trigger dashboard view in AdminLayout
         window.dispatchEvent(new CustomEvent('admin:navigate', { detail: 'dashboard' }))

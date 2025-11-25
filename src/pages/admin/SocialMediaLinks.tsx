@@ -16,15 +16,11 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Switch,
-  FormControlLabel,
   CircularProgress,
   Alert,
 } from '@mui/material'
 import {
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
   Facebook as FacebookIcon,
   Twitter as TwitterIcon,
   Instagram as InstagramIcon,
@@ -35,9 +31,7 @@ import {
 import PageContainer from '../../components/common/PageContainer'
 import {
   getAllSocialMediaLinks,
-  createSocialMediaLink,
   updateSocialMediaLink,
-  deleteSocialMediaLink,
   type SocialMediaLink,
 } from '../../api/socialMedia'
 
@@ -77,7 +71,6 @@ function SocialMediaLinks() {
   const [links, setLinks] = useState<LinkDisplay[]>([])
   const [selectedLink, setSelectedLink] = useState<LinkDisplay | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,18 +96,6 @@ function SocialMediaLinks() {
     fetchLinks()
   }, [])
 
-  const handleAdd = () => {
-    setSelectedLink({
-      id: 0, // Temporary ID for new link
-      platform: 'facebook',
-      url: '',
-      isActive: true,
-    })
-    setAddDialogOpen(true)
-    setError(null)
-    setSuccessMessage(null)
-  }
-
   const handleEdit = (link: LinkDisplay) => {
     setSelectedLink({ ...link })
     setEditDialogOpen(true)
@@ -136,26 +117,16 @@ function SocialMediaLinks() {
       setError(null)
       setSuccessMessage(null)
 
-      if (selectedLink.id && selectedLink.id > 0) {
-        // Update existing link
-        const backendPayload = mapFrontendToBackend(selectedLink)
-        const updated = await updateSocialMediaLink({
-          id: selectedLink.id,
-          ...backendPayload,
-        })
-        const updatedLink = mapBackendToFrontend(updated)
-        setLinks(links.map((l) => (l.id === selectedLink.id ? updatedLink : l)))
-        setEditDialogOpen(false)
-        setSuccessMessage('Social media link updated successfully!')
-      } else {
-        // Create new link
-        const backendPayload = mapFrontendToBackend(selectedLink)
-        const created = await createSocialMediaLink(backendPayload)
-        const newLink = mapBackendToFrontend(created)
-        setLinks([...links, newLink])
-        setAddDialogOpen(false)
-        setSuccessMessage('Social media link created successfully!')
-      }
+      // Update existing link
+      const backendPayload = mapFrontendToBackend(selectedLink)
+      const updated = await updateSocialMediaLink({
+        id: selectedLink.id,
+        ...backendPayload,
+      })
+      const updatedLink = mapBackendToFrontend(updated)
+      setLinks(links.map((l) => (l.id === selectedLink.id ? updatedLink : l)))
+      setEditDialogOpen(false)
+      setSuccessMessage('Social media link updated successfully!')
       setSelectedLink(null)
     } catch (err: any) {
       console.error('Error saving social media link:', err)
@@ -165,60 +136,14 @@ function SocialMediaLinks() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this social media link?')) {
-      return
-    }
-
-    try {
-      setError(null)
-      await deleteSocialMediaLink(id)
-      setLinks(links.filter((l) => l.id !== id))
-      setSuccessMessage('Social media link deleted successfully!')
-    } catch (err: any) {
-      console.error('Error deleting social media link:', err)
-      setError(err?.response?.data?.message || err?.message || 'Failed to delete social media link')
-    }
-  }
-
-  const handleToggleActive = async (id: number) => {
-    const link = links.find((l) => l.id === id)
-    if (!link) return
-
-    const updatedLink = { ...link, isActive: !link.isActive }
-    try {
-      setError(null)
-      const backendPayload = mapFrontendToBackend(updatedLink)
-      const updated = await updateSocialMediaLink({
-        id,
-        ...backendPayload,
-      })
-      const mappedUpdated = mapBackendToFrontend(updated)
-      setLinks(links.map((l) => (l.id === id ? mappedUpdated : l)))
-    } catch (err: any) {
-      console.error('Error toggling social media link status:', err)
-      setError(err?.response?.data?.message || err?.message || 'Failed to update link status')
-      // Revert on error
-      setLinks(links.map((l) => (l.id === id ? link : l)))
-    }
-  }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Social Media Links
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAdd}
-            disabled={loading}
-            sx={{ backgroundColor: 'primary.main' }}
-          >
-            Add Link
-          </Button>
         </Box>
 
         {(error || successMessage) && (
@@ -241,17 +166,16 @@ function SocialMediaLinks() {
         ) : links.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="body1" color="text.secondary">
-              No social media links found. Click "Add Link" to create one.
+              No social media links found.
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
-          <Table>
+          <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 500 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Platform</TableCell>
                 <TableCell>URL</TableCell>
-                <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -280,34 +204,13 @@ function SocialMediaLinks() {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={link.isActive}
-                          onChange={() => handleToggleActive(link.id)}
-                          size="small"
-                        />
-                      }
-                      label={link.isActive ? 'Active' : 'Inactive'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEdit(link)}
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(link.id)}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(link)}
+                      color="primary"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -317,19 +220,23 @@ function SocialMediaLinks() {
         )}
       </Card>
 
-      {/* Add/Edit Dialog */}
+      {/* Edit Dialog */}
       <Dialog
-        open={addDialogOpen || editDialogOpen}
+        open={editDialogOpen}
         onClose={() => {
-          setAddDialogOpen(false)
           setEditDialogOpen(false)
           setSelectedLink(null)
         }}
         maxWidth="sm"
         fullWidth
         disableEnforceFocus
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+          }
+        }}
       >
-        <DialogTitle>{selectedLink?.id ? 'Edit Social Media Link' : 'Add Social Media Link'}</DialogTitle>
+        <DialogTitle>Edit Social Media Link</DialogTitle>
         <DialogContent>
           {selectedLink && (
             <Box sx={{ mt: 2 }}>
@@ -357,18 +264,6 @@ function SocialMediaLinks() {
                 value={selectedLink.url}
                 onChange={(e) => setSelectedLink({ ...selectedLink, url: e.target.value })}
                 placeholder="https://..."
-                sx={{ mb: 2 }}
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={selectedLink.isActive}
-                    onChange={(e) =>
-                      setSelectedLink({ ...selectedLink, isActive: e.target.checked })
-                    }
-                  />
-                }
-                label="Active"
               />
             </Box>
           )}
@@ -376,7 +271,6 @@ function SocialMediaLinks() {
         <DialogActions>
           <Button
             onClick={() => {
-              setAddDialogOpen(false)
               setEditDialogOpen(false)
               setSelectedLink(null)
             }}

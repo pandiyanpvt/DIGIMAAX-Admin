@@ -152,14 +152,14 @@ function CartDetails() {
   const totalValue = carts.reduce((sum, c) => sum + c.total, 0)
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
               Cart Details Management
             </Typography>
-            <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 3 }, mt: 2 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary">
                   Active Carts
@@ -187,14 +187,15 @@ function CartDetails() {
         </Box>
       </Card>
 
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
           <TextField
             placeholder="Search carts by user..."
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: { xs: '100%', sm: 300 } }}
+            fullWidth={false}
           />
           <TextField
             select
@@ -213,8 +214,8 @@ function CartDetails() {
           </TextField>
         </Box>
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 700 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Cart ID</TableCell>
@@ -284,7 +285,18 @@ function CartDetails() {
       </Card>
 
       {/* View Cart Details Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
+      <Dialog 
+        open={viewDialogOpen} 
+        onClose={() => setViewDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+            maxHeight: { xs: '95vh', sm: '90vh' },
+          }
+        }}
+      >
         <DialogTitle>Cart Details - #{selectedCart?.id}</DialogTitle>
         <DialogContent>
           {selectedCart && (

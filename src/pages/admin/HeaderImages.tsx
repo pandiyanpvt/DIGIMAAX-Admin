@@ -181,9 +181,9 @@ function HeaderImages() {
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Header Images Management
           </Typography>
@@ -212,7 +212,10 @@ function HeaderImages() {
             </Typography>
           </Box>
         ) : (
-          <ImageList cols={3} gap={16}>
+          <ImageList 
+            cols={{ xs: 1, sm: 2, md: 3 }} 
+            gap={{ xs: 8, sm: 12, md: 16 }}
+          >
             {images.map((image) => (
               <ImageListItem key={image.id}>
                 <Box
@@ -266,6 +269,11 @@ function HeaderImages() {
         }}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            m: { xs: 1, sm: 2 },
+          }
+        }}
       >
         <DialogTitle>{selectedImage?.id ? 'Edit Header Image' : 'Add Header Image'}</DialogTitle>
         <DialogContent>

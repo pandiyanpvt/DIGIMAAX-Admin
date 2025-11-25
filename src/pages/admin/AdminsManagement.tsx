@@ -208,9 +208,9 @@ function AdminsManagement() {
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Admins Management
           </Typography>
@@ -232,8 +232,8 @@ function AdminsManagement() {
           </Alert>
         )}
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Admin</TableCell>
@@ -329,7 +329,17 @@ function AdminsManagement() {
 
       {/* Add/Edit Dialog */}
       {canEdit && (
-        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <Dialog 
+          open={dialogOpen} 
+          onClose={() => setDialogOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+          PaperProps={{
+            sx: {
+              m: { xs: 1, sm: 2 },
+            }
+          }}
+        >
           <DialogTitle>{editingAdmin ? 'Edit Admin' : 'Add New Admin'}</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>

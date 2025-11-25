@@ -207,9 +207,9 @@ function ProductCategories() {
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Product Categories
           </Typography>
@@ -242,7 +242,8 @@ function ProductCategories() {
           size="small"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 3, minWidth: 300 }}
+          sx={{ mb: 3, minWidth: { xs: '100%', sm: 300 } }}
+          fullWidth={false}
           disabled={loading}
         />
 
@@ -257,8 +258,8 @@ function ProductCategories() {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
-          <Table>
+          <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Category</TableCell>

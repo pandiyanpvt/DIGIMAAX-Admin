@@ -4,8 +4,6 @@ import {
   Dashboard as DashboardIcon,
   PhotoLibrary as GalleryIcon,
   Logout as LogoutIcon,
-  PeopleAlt as UsersIcon,
-  Person as PersonIcon,
   Email as ContactIcon,
   Image as ImageIcon,
   Share as SocialIcon,
@@ -15,6 +13,7 @@ import {
   Payment as PaymentIcon,
   AdminPanelSettings as RoleIcon,
   ShoppingBag as CartIcon,
+  History as LogsIcon,
 } from '@mui/icons-material'
 
 interface MenuItem {
@@ -28,6 +27,9 @@ interface SidebarProps {
   selectedMenu: string
   onMenuChange: (menuId: string) => void
   visibleMenuIds?: string[]
+  open?: boolean
+  onClose?: () => void
+  isMobile?: boolean
 }
 
 const menuItems: MenuItem[] = [
@@ -42,23 +44,29 @@ const menuItems: MenuItem[] = [
   { id: 'orders', label: 'Orders', icon: <OrderIcon />, shortLabel: 'Orders' },
   { id: 'payments', label: 'Payments', icon: <PaymentIcon />, shortLabel: 'Payments' },
   // Dev View
-  { id: 'users', label: 'Users', icon: <UsersIcon />, shortLabel: 'Users' },
   { id: 'user-roles', label: 'User Roles', icon: <RoleIcon />, shortLabel: 'Roles' },
   { id: 'cart-details', label: 'Cart Details', icon: <CartIcon />, shortLabel: 'Carts' },
+  { id: 'user-logs', label: 'User Logs', icon: <LogsIcon />, shortLabel: 'Logs' },
   // Essential
-  { id: 'profile', label: 'Profile', icon: <PersonIcon />, shortLabel: 'Profile' },
   { id: 'logout', label: 'Logout', icon: <LogoutIcon />, shortLabel: 'Exit' },
 ]
 
-function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarProps) {
+function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true, onClose, isMobile = false }: SidebarProps) {
   const filteredMenuItems = visibleMenuIds
     ? menuItems.filter((item) => visibleMenuIds.includes(item.id))
     : menuItems
 
+  const handleMenuClick = (menuId: string) => {
+    onMenuChange(menuId)
+    if (isMobile && onClose) {
+      onClose()
+    }
+  }
+
   return (
     <Box
       sx={{
-        width: 260,
+        width: { xs: 280, md: 260 },
         height: '100vh',
         background: 'rgba(6, 11, 25, 0.72)',
         backdropFilter: 'blur(20px)',
@@ -73,9 +81,11 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
         left: 0,
         top: 0,
         zIndex: 1000,
-        borderTopRightRadius: 32,
-        borderBottomRightRadius: 40,
+        borderTopRightRadius: { xs: 0, md: 32 },
+        borderBottomRightRadius: { xs: 0, md: 40 },
         overflow: 'hidden',
+        transform: { xs: open ? 'translateX(0)' : 'translateX(-100%)', md: 'translateX(0)' },
+        transition: 'transform 0.3s ease-in-out',
       }}
     >
       {/* Glow accents */}
@@ -163,7 +173,7 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
               style={{ width: '100%' }}
             >
               <Box
-                onClick={() => onMenuChange(item.id)}
+                onClick={() => handleMenuClick(item.id)}
                 sx={{
                   display: 'flex',
                   flexDirection: 'row',
@@ -228,16 +238,17 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds }: SidebarPro
                   sx={{
                     color: isActive ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.7)',
                     fontWeight: isActive ? 600 : 500,
-                    fontSize: '0.95rem',
+                    fontSize: { xs: '0.875rem', md: '0.95rem' },
                     textAlign: 'left',
                     textTransform: 'none',
                     lineHeight: 1.4,
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
                     flex: 1,
+                    display: { xs: 'none', sm: 'block' },
                   }}
                 >
-                  {item.label}
+                  {isMobile ? (item.shortLabel || item.label) : item.label}
                 </Typography>
                 {isActive && (
                   <Box

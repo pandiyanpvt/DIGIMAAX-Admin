@@ -23,7 +23,6 @@ import {
   Alert,
   Paper,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
 import PageContainer from '../../components/common/PageContainer'
 import {
   Edit as EditIcon,
@@ -359,10 +358,10 @@ DIGIMAAX Team`,
   }
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2 }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
         {/* Header and Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Bookings Management
           </Typography>
@@ -377,13 +376,14 @@ DIGIMAAX Team`,
         </Box>
 
         {/* Filters */}
-        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             placeholder="Search bookings..."
             size="small"
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            sx={{ minWidth: 250 }}
+            sx={{ minWidth: { xs: '100%', sm: 250 } }}
+            fullWidth={false}
           />
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Status</InputLabel>
@@ -430,8 +430,8 @@ DIGIMAAX Team`,
         </Box>
 
         {/* Bookings Table */}
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 1000 }}>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
@@ -569,14 +569,14 @@ DIGIMAAX Team`,
         </DialogTitle>
         <DialogContent sx={{ pt: 3, bgcolor: '#1e1e1e' }}>
           {selectedBooking && (
-            <Grid container spacing={3}>
-              <Grid xs={12}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box>
                 <Paper elevation={0} sx={{ p: 2, bgcolor: '#2d2d2d', borderRadius: 2 }}>
                   <Typography variant="subtitle2" sx={{ color: '#b0b0b0' }} gutterBottom>
                     Customer Information
                   </Typography>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <PersonIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -586,8 +586,8 @@ DIGIMAAX Team`,
                       <Typography variant="body1" sx={{ fontWeight: 500, color: '#ffffff' }}>
                         {selectedBooking.customerName}
                       </Typography>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <EmailIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -595,8 +595,8 @@ DIGIMAAX Team`,
                         </Typography>
                       </Box>
                       <Typography variant="body1" sx={{ color: '#ffffff' }}>{selectedBooking.email}</Typography>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <PhoneIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -604,18 +604,18 @@ DIGIMAAX Team`,
                         </Typography>
                       </Box>
                       <Typography variant="body1" sx={{ color: '#ffffff' }}>{selectedBooking.phone}</Typography>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
 
-              <Grid xs={12}>
+              <Box>
                 <Paper elevation={0} sx={{ p: 2, bgcolor: '#2d2d2d', borderRadius: 2 }}>
                   <Typography variant="subtitle2" sx={{ color: '#b0b0b0' }} gutterBottom>
                     Booking Information
                   </Typography>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#b0b0b0' }}>
                         Service Type
                       </Typography>
@@ -628,8 +628,8 @@ DIGIMAAX Team`,
                           fontWeight: 500,
                         }} 
                       />
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <LocationOn fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -637,8 +637,8 @@ DIGIMAAX Team`,
                         </Typography>
                       </Box>
                       <Typography variant="body1" sx={{ color: '#ffffff' }}>{selectedBooking.address}</Typography>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <CalendarIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -648,8 +648,8 @@ DIGIMAAX Team`,
                       <Typography variant="body1" sx={{ color: '#ffffff' }}>
                         {selectedBooking.date}
                       </Typography>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <MoneyIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
                         <Typography variant="caption" sx={{ color: '#b0b0b0' }}>
@@ -659,8 +659,8 @@ DIGIMAAX Team`,
                       <Typography variant="h6" sx={{ color: '#4f46e5' }}>
                         {selectedBooking.quotedAmount || 'Not quoted yet'}
                       </Typography>
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#b0b0b0' }}>
                         Status
                       </Typography>
@@ -674,8 +674,8 @@ DIGIMAAX Team`,
                           fontWeight: 500,
                         }}
                       />
-                    </Grid>
-                    <Grid xs={12} sm={6}>
+                    </Box>
+                    <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#b0b0b0' }}>
                         Payment Status
                       </Typography>
@@ -689,13 +689,13 @@ DIGIMAAX Team`,
                           fontWeight: 500,
                         }}
                       />
-                    </Grid>
-                  </Grid>
+                    </Box>
+                  </Box>
                 </Paper>
-              </Grid>
+              </Box>
 
               {selectedBooking.message && (
-                <Grid xs={12}>
+                <Box>
                   <Paper elevation={0} sx={{ p: 2, bgcolor: '#2d2d2d', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <NoteIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
@@ -707,10 +707,10 @@ DIGIMAAX Team`,
                       {selectedBooking.message}
                     </Typography>
                   </Paper>
-                </Grid>
+                </Box>
               )}
               {selectedBooking.notes && (
-                <Grid xs={12}>
+                <Box>
                   <Paper elevation={0} sx={{ p: 2, bgcolor: '#2d2d2d', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <NoteIcon fontSize="small" sx={{ color: '#b0b0b0' }} />
@@ -722,9 +722,9 @@ DIGIMAAX Team`,
                       {selectedBooking.notes}
                     </Typography>
                   </Paper>
-                </Grid>
+                </Box>
               )}
-            </Grid>
+            </Box>
           )}
         </DialogContent>
         <Box sx={{ 
@@ -806,8 +806,8 @@ DIGIMAAX Team`,
         </DialogTitle>
         <DialogContent sx={{ pt: 3, bgcolor: '#1e1e1e' }}>
           {selectedBooking && (
-            <Grid container spacing={3}>
-              <Grid xs={12} sm={6}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' }, display: 'inline-block' }}>
                 <TextField
                   fullWidth
                   label="Request Date"
@@ -840,8 +840,8 @@ DIGIMAAX Team`,
                     },
                   }}
                 />
-              </Grid>
-              <Grid xs={12} sm={6}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' }, display: 'inline-block' }}>
                 <TextField
                   fullWidth
                   label="Quoted Amount"
@@ -873,8 +873,8 @@ DIGIMAAX Team`,
                     },
                   }}
                 />
-              </Grid>
-              <Grid xs={12} sm={6}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' }, display: 'inline-block' }}>
                 <FormControl 
                   fullWidth 
                   sx={{ 
@@ -934,8 +934,8 @@ DIGIMAAX Team`,
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid xs={12} sm={6}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' }, display: 'inline-block' }}>
                 <FormControl 
                   fullWidth 
                   sx={{ 
@@ -995,8 +995,8 @@ DIGIMAAX Team`,
                     <MenuItem value="cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid xs={12}>
+              </Box>
+              <Box>
                 <TextField
                   fullWidth
                   label="Address"
@@ -1027,8 +1027,8 @@ DIGIMAAX Team`,
                     },
                   }}
                 />
-              </Grid>
-              <Grid xs={12}>
+              </Box>
+              <Box>
                 <TextField
                   fullWidth
                   multiline
@@ -1062,8 +1062,8 @@ DIGIMAAX Team`,
                     },
                   }}
                 />
-              </Grid>
-              <Grid xs={12}>
+              </Box>
+              <Box>
                 <TextField
                   fullWidth
                   multiline
@@ -1100,8 +1100,8 @@ DIGIMAAX Team`,
                     },
                   }}
                 />
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           )}
         </DialogContent>
         <Box sx={{ 
@@ -1305,8 +1305,8 @@ DIGIMAAX Team`,
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3, bgcolor: '#1e1e1e' }}>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid xs={12}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <Box>
               <TextField
                 fullWidth
                 label="To"
@@ -1341,8 +1341,8 @@ DIGIMAAX Team`,
                   },
                 }}
               />
-            </Grid>
-            <Grid xs={12}>
+            </Box>
+            <Box>
               <TextField
                 fullWidth
                 label="Subject"
@@ -1370,8 +1370,8 @@ DIGIMAAX Team`,
                   },
                 }}
               />
-            </Grid>
-            <Grid xs={12}>
+            </Box>
+            <Box>
               <TextField
                 fullWidth
                 multiline
@@ -1401,9 +1401,9 @@ DIGIMAAX Team`,
                   },
                 }}
               />
-            </Grid>
+            </Box>
             {emailData.type !== 'custom' && (
-              <Grid xs={12}>
+              <Box>
                 <Button
                   size="small"
                   onClick={() => {
@@ -1427,9 +1427,9 @@ DIGIMAAX Team`,
                 >
                   Reset to Template
                 </Button>
-              </Grid>
+              </Box>
             )}
-          </Grid>
+          </Box>
         </DialogContent>
         <Box sx={{ 
           p: 2.5, 

@@ -21,7 +21,6 @@ import {
 import {
   Visibility as ViewIcon,
   Download as DownloadIcon,
-  Payment as PaymentIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
 
@@ -73,7 +72,7 @@ const samplePayments = [
 ]
 
 function Payments() {
-  const [payments, setPayments] = useState(samplePayments)
+  const [payments] = useState(samplePayments)
   const [selectedPayment, setSelectedPayment] = useState<any>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -158,9 +157,9 @@ function Payments() {
     .reduce((sum, p) => sum + p.amount, 0)
 
   return (
-    <PageContainer sx={{ p: 4 }}>
-      <Card sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
               Payments Management
@@ -180,14 +179,15 @@ function Payments() {
         </Box>
       </Card>
 
-      <Card sx={{ p: 3, borderRadius: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 3 }}>
           <TextField
             placeholder="Search payments..."
             size="small"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ minWidth: 300 }}
+            sx={{ minWidth: { xs: '100%', sm: 300 } }}
+            fullWidth={false}
           />
           <TextField
             select
@@ -198,6 +198,8 @@ function Payments() {
               native: true,
             }}
             size="small"
+            sx={{ minWidth: { xs: '100%', sm: 150 } }}
+            fullWidth={false}
           >
             <option value="all">All</option>
             <option value="completed">Completed</option>
@@ -207,8 +209,8 @@ function Payments() {
           </TextField>
         </Box>
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Payment ID</TableCell>
