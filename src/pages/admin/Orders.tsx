@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -17,86 +17,128 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Grid,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material'
 import {
   Visibility as ViewIcon,
   Download as DownloadIcon,
-  ExpandMore as ExpandMoreIcon,
-  ShoppingCart as OrderIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import { getAllOrders, getOrderById, updateOrderStatus, type Order } from '../../api/orders'
 
-const sampleOrders = [
-  {
-    id: 1,
-    orderNumber: 'ORD-001',
-    customerName: 'John Doe',
-    customerEmail: 'john@example.com',
-    total: 149.98,
-    status: 'pending',
-    paymentStatus: 'paid',
-    createdAt: '2024-01-15T10:30:00',
-    orderItems: [
-      { id: 1, productName: 'Product 1', quantity: 2, price: 99.99, subtotal: 199.98 },
-      { id: 2, productName: 'Product 2', quantity: 1, price: 49.99, subtotal: 49.99 },
-    ],
-  },
-  {
-    id: 2,
-    orderNumber: 'ORD-002',
-    customerName: 'Jane Smith',
-    customerEmail: 'jane@example.com',
-    total: 79.99,
-    status: 'completed',
-    paymentStatus: 'paid',
-    createdAt: '2024-01-14T14:20:00',
-    orderItems: [
-      { id: 3, productName: 'Product 3', quantity: 1, price: 79.99, subtotal: 79.99 },
-    ],
-  },
-  {
-    id: 3,
-    orderNumber: 'ORD-003',
-    customerName: 'Bob Johnson',
-    customerEmail: 'bob@example.com',
-    total: 249.97,
-    status: 'processing',
-    paymentStatus: 'pending',
-    createdAt: '2024-01-13T09:15:00',
-    orderItems: [
-      { id: 4, productName: 'Product 1', quantity: 1, price: 99.99, subtotal: 99.99 },
-      { id: 5, productName: 'Product 2', quantity: 3, price: 49.99, subtotal: 149.97 },
-    ],
-  },
-]
+interface DisplayOrder {
+  id: number
+  orderNumber: string
+  customerName: string
+  customerEmail: string
+  total: number
+  status: string
+  paymentStatus: string
+  createdAt: string
+  orderItems: Array<{
+    id: number
+    productName: string
+    quantity: number
+    price: number
+    subtotal: number
+  }>
+}
 
 function Orders() {
-  const [orders, setOrders] = useState(sampleOrders)
-  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [orders, setOrders] = useState<DisplayOrder[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<DisplayOrder | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  // Transform backend order to display format
+  const transformOrder = (order: Order): DisplayOrder => {
+    const customerName = order.billing_name || 
+      (order.first_name && order.last_name ? `${order.first_name} ${order.last_name}` : 'N/A')
+    const customerEmail = order.billing_email || order.email || 'N/A'
+    
+    return {
+      id: order.id,
+      orderNumber: order.order_number,
+      customerName,
+      customerEmail,
+      total: parseFloat(order.total_amount?.toString() || '0'),
+      status: order.status,
+      paymentStatus: order.payment_status || 'pending',
+      createdAt: order.created_at,
+      orderItems: (order.items || []).map((item) => ({
+        id: item.id,
+        productName: item.product_title || 'Unknown Product',
+        quantity: item.quantity,
+        price: parseFloat(item.unit_price?.toString() || '0'),
+        subtotal: parseFloat(item.total_price?.toString() || '0'),
+      })),
+    }
+  }
+
+  // Fetch orders from backend
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const statusParam = statusFilter === 'all' ? undefined : statusFilter
+        const response = await getAllOrders({ status: statusParam, page: 1, limit: 100 })
+        const transformedOrders = response.orders.map(transformOrder)
+        setOrders(transformedOrders)
+      } catch (err: any) {
+        console.error('Error fetching orders:', err)
+        setError(err?.response?.data?.error?.message || 'Failed to fetch orders')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [statusFilter])
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
       o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || o.status === statusFilter
-    return matchesSearch && matchesStatus
+    return matchesSearch
   })
 
-  const handleView = (order: any) => {
-    setSelectedOrder(order)
-    setViewDialogOpen(true)
+  const handleView = async (order: DisplayOrder) => {
+    try {
+      // Fetch full order details with items
+      const fullOrder = await getOrderById(order.id)
+      const transformed = transformOrder(fullOrder)
+      setSelectedOrder(transformed)
+      setViewDialogOpen(true)
+    } catch (err: any) {
+      console.error('Error fetching order details:', err)
+      setError(err?.response?.data?.error?.message || 'Failed to fetch order details')
+      // Fallback to showing the order we already have
+      setSelectedOrder(order)
+      setViewDialogOpen(true)
+    }
   }
 
-  const handleStatusChange = (orderId: number, newStatus: string) => {
-    setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)))
+  const handleStatusChange = async (orderId: number, newStatus: string) => {
+    try {
+      await updateOrderStatus(orderId, { status: newStatus as any })
+      setSuccessMessage(`Order status updated to ${newStatus}`)
+      // Update local state
+      setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)))
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus })
+      }
+    } catch (err: any) {
+      console.error('Error updating order status:', err)
+      setError(err?.response?.data?.error?.message || 'Failed to update order status')
+    }
   }
 
   const handleExport = () => {
@@ -111,7 +153,7 @@ function Orders() {
         'Date',
         'Items Count',
       ].join(','),
-      ...orders.map((o) =>
+      ...filteredOrders.map((o) =>
         [
           o.orderNumber,
           o.customerName,
@@ -135,9 +177,11 @@ function Orders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'delivered':
       case 'completed':
         return 'success'
       case 'processing':
+      case 'shipped':
         return 'info'
       case 'pending':
         return 'warning'
@@ -160,6 +204,7 @@ function Orders() {
             startIcon={<DownloadIcon />}
             onClick={handleExport}
             sx={{ backgroundColor: 'primary.main' }}
+            disabled={loading || filteredOrders.length === 0}
           >
             Export
           </Button>
@@ -186,72 +231,93 @@ function Orders() {
             <option value="all">All</option>
             <option value="pending">Pending</option>
             <option value="processing">Processing</option>
-            <option value="completed">Completed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </TextField>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Order Number</TableCell>
-                <TableCell>Customer</TableCell>
-                <TableCell>Total</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Payment</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id} hover>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {order.orderNumber}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2">{order.customerName}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {order.customerEmail}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      ${order.total.toFixed(2)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={order.status} size="small" color={getStatusColor(order.status)} />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={order.paymentStatus}
-                      size="small"
-                      color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleView(order)}
-                      color="primary"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Order Number</TableCell>
+                  <TableCell>Customer</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Payment</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredOrders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No orders found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <TableRow key={order.id} hover>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {order.orderNumber}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="body2">{order.customerName}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {order.customerEmail}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          LKR {order.total.toFixed(2)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={order.status} size="small" color={getStatusColor(order.status)} />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={order.paymentStatus}
+                          size="small"
+                          color={order.paymentStatus === 'paid' ? 'success' : 'warning'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleView(order)}
+                          color="primary"
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Card>
 
       {/* View Order Details Dialog */}
@@ -260,20 +326,27 @@ function Orders() {
         <DialogContent>
           {selectedOrder && (
             <Box sx={{ mt: 2 }}>
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                  gap: 2,
+                  mb: 3,
+                }}
+              >
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Customer Name
                   </Typography>
                   <Typography variant="body1">{selectedOrder.customerName}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Email
                   </Typography>
                   <Typography variant="body1">{selectedOrder.customerEmail}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Order Status
                   </Typography>
@@ -283,8 +356,8 @@ function Orders() {
                     color={getStatusColor(selectedOrder.status)}
                     sx={{ mt: 0.5 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Payment Status
                   </Typography>
@@ -294,22 +367,22 @@ function Orders() {
                     color={selectedOrder.paymentStatus === 'paid' ? 'success' : 'warning'}
                     sx={{ mt: 0.5 }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Order Date
                   </Typography>
                   <Typography variant="body1">
                     {new Date(selectedOrder.createdAt).toLocaleString()}
                   </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </Box>
+                <Box>
                   <Typography variant="caption" color="text.secondary">
                     Total Amount
                   </Typography>
-                  <Typography variant="h6">${selectedOrder.total.toFixed(2)}</Typography>
-                </Grid>
-              </Grid>
+                  <Typography variant="h6">LKR {selectedOrder.total.toFixed(2)}</Typography>
+                </Box>
+              </Box>
 
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Order Items
@@ -325,12 +398,12 @@ function Orders() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {selectedOrder.orderItems.map((item: any) => (
+                    {selectedOrder.orderItems.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.productName}</TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${item.price.toFixed(2)}</TableCell>
-                        <TableCell align="right">${item.subtotal.toFixed(2)}</TableCell>
+                        <TableCell align="right">LKR {item.price.toFixed(2)}</TableCell>
+                        <TableCell align="right">LKR {item.subtotal.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
@@ -338,7 +411,7 @@ function Orders() {
                         Total:
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        ${selectedOrder.total.toFixed(2)}
+                        LKR {selectedOrder.total.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -350,14 +423,14 @@ function Orders() {
                   Change Order Status
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {['pending', 'processing', 'completed', 'cancelled'].map((status) => (
+                  {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
                     <Button
                       key={status}
                       variant={selectedOrder.status === status ? 'contained' : 'outlined'}
                       size="small"
                       onClick={() => handleStatusChange(selectedOrder.id, status)}
                     >
-                      {status}
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </Button>
                   ))}
                 </Box>
@@ -369,6 +442,28 @@ function Orders() {
           <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </PageContainer>
   )
 }

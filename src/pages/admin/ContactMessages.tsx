@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -18,8 +18,10 @@ import {
   DialogActions,
   Chip,
   Avatar,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material'
-import Grid from '@mui/material/GridLegacy'
 import {
   Delete as DeleteIcon,
   Visibility as ViewIcon,
@@ -29,62 +31,124 @@ import {
   Reply as ReplyIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import {
+  getAllContactMessages,
+  getContactMessageById,
+  deleteContactMessage,
+  type ContactMessage,
+} from '../../api/contact'
 
-const sampleMessages = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    subject: 'Product Inquiry',
-    message: 'I would like to know more about your products.',
-    status: 'unread',
-    createdAt: '2024-01-15T10:30:00',
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+1234567891',
-    subject: 'Support Request',
-    message: 'I need help with my order.',
-    status: 'read',
-    createdAt: '2024-01-14T14:20:00',
-  },
-]
+interface DisplayMessage extends ContactMessage {
+  status: 'read' | 'unread'
+}
 
 function ContactMessages() {
-  const [messages, setMessages] = useState(sampleMessages)
-  const [selectedMessage, setSelectedMessage] = useState<any>(null)
+  const [messages, setMessages] = useState<ContactMessage[]>([])
+  const [readMessages, setReadMessages] = useState<Set<number>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
 
-  const filteredMessages = messages.filter((m) => {
-    const matchesSearch =
-      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.subject.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || m.status === statusFilter
-    return matchesSearch && matchesStatus
+  // Fetch contact messages from backend
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getAllContactMessages()
+        setMessages(data)
+        // Load read messages from localStorage
+        const stored = localStorage.getItem('readContactMessages')
+        if (stored) {
+          setReadMessages(new Set(JSON.parse(stored)))
+        }
+      } catch (err: any) {
+        console.error('Error fetching contact messages:', err)
+        setError(err?.response?.data?.message || 'Failed to fetch contact messages')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMessages()
+  }, [])
+
+  // Helper to check if message is read
+  const isRead = (id: number) => readMessages.has(id)
+
+  // Helper to get display message with status
+  const getDisplayMessage = (msg: ContactMessage): DisplayMessage => ({
+    ...msg,
+    status: isRead(msg.id) ? 'read' : 'unread',
   })
 
-  const handleView = (message: any) => {
-    setSelectedMessage(message)
-    setViewDialogOpen(true)
-    // Mark as read when viewed
-    if (message.status === 'unread') {
-      setMessages(messages.map((m) => (m.id === message.id ? { ...m, status: 'read' } : m)))
+  const filteredMessages = messages
+    .map(getDisplayMessage)
+    .filter((m) => {
+      const matchesSearch =
+        m.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.emailAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.subject && m.subject.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesStatus = statusFilter === 'all' || m.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+
+  const handleView = async (message: ContactMessage) => {
+    try {
+      // Fetch full message details
+      const fullMessage = await getContactMessageById(message.id)
+      setSelectedMessage(fullMessage)
+      setViewDialogOpen(true)
+      // Mark as read when viewed
+      if (!isRead(message.id)) {
+        const newReadMessages = new Set(readMessages)
+        newReadMessages.add(message.id)
+        setReadMessages(newReadMessages)
+        localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+      }
+    } catch (err: any) {
+      console.error('Error fetching message details:', err)
+      // Fallback to showing the message we already have
+      setSelectedMessage(message)
+      setViewDialogOpen(true)
+      if (!isRead(message.id)) {
+        const newReadMessages = new Set(readMessages)
+        newReadMessages.add(message.id)
+        setReadMessages(newReadMessages)
+        localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+      }
     }
   }
 
   const handleMarkAsRead = (id: number) => {
-    setMessages(messages.map((m) => (m.id === id ? { ...m, status: 'read' } : m)))
+    const newReadMessages = new Set(readMessages)
+    newReadMessages.add(id)
+    setReadMessages(newReadMessages)
+    localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
   }
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this message?')) {
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this message?')) {
+      return
+    }
+
+    try {
+      setError(null)
+      await deleteContactMessage(id)
       setMessages(messages.filter((m) => m.id !== id))
+      // Remove from read messages if it was there
+      const newReadMessages = new Set(readMessages)
+      newReadMessages.delete(id)
+      setReadMessages(newReadMessages)
+      localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+      setSuccessMessage('Message deleted successfully')
+    } catch (err: any) {
+      console.error('Error deleting message:', err)
+      setError(err?.response?.data?.message || 'Failed to delete message')
     }
   }
 
@@ -94,9 +158,18 @@ function ContactMessages() {
 
   const handleExport = () => {
     const csv = [
-      ['ID', 'Name', 'Email', 'Phone', 'Subject', 'Message', 'Status', 'Date'].join(','),
+      ['ID', 'Name', 'Email', 'Phone', 'Subject', 'Message', 'Service Interest', 'Date'].join(','),
       ...messages.map((m) =>
-        [m.id, m.name, m.email, m.phone, m.subject, `"${m.message}"`, m.status, m.createdAt].join(',')
+        [
+          m.id,
+          m.fullName,
+          m.emailAddress,
+          m.phoneNumber || '',
+          m.subject || '',
+          `"${m.message || ''}"`,
+          m.serviceInterest || '',
+          m.created_at,
+        ].join(',')
       ),
     ].join('\n')
 
@@ -108,7 +181,7 @@ function ContactMessages() {
     a.click()
   }
 
-  const unreadCount = messages.filter((m) => m.status === 'unread').length
+  const unreadCount = messages.filter((m) => !isRead(m.id)).length
 
   return (
     <PageContainer sx={{ p: 4 }}>
@@ -132,6 +205,7 @@ function ContactMessages() {
             startIcon={<DownloadIcon />}
             onClick={handleExport}
             sx={{ backgroundColor: 'primary.main' }}
+            disabled={loading || messages.length === 0}
           >
             Export
           </Button>
@@ -168,87 +242,107 @@ function ContactMessages() {
           </Button>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>From</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredMessages.map((message) => (
-                <TableRow key={message.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ backgroundColor: '#667eea' }}>
-                        <EmailIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {message.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {message.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{message.subject}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={message.status}
-                      size="small"
-                      color={message.status === 'unread' ? 'error' : 'default'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(message.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleView(message)}
-                        color="primary"
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                      {message.status === 'unread' && (
-                        <IconButton
-                          size="small"
-                          onClick={() => handleMarkAsRead(message.id)}
-                          color="primary"
-                        >
-                          <MarkReadIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size="small"
-                        onClick={() => handleReply(message.email)}
-                        color="primary"
-                      >
-                        <ReplyIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(message.id)}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>From</TableCell>
+                  <TableCell>Subject</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {filteredMessages.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No messages found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredMessages.map((message) => (
+                    <TableRow key={message.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar sx={{ backgroundColor: '#667eea' }}>
+                            <EmailIcon />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {message.fullName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {message.emailAddress}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{message.subject || 'No subject'}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={message.status}
+                          size="small"
+                          color={message.status === 'unread' ? 'error' : 'default'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(message.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(message)}
+                            color="primary"
+                          >
+                            <ViewIcon fontSize="small" />
+                          </IconButton>
+                          {message.status === 'unread' && (
+                            <IconButton
+                              size="small"
+                              onClick={() => handleMarkAsRead(message.id)}
+                              color="primary"
+                            >
+                              <MarkReadIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            onClick={() => handleReply(message.emailAddress)}
+                            color="primary"
+                          >
+                            <ReplyIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(message.id)}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Card>
 
       {/* View Details Dialog */}
@@ -256,52 +350,71 @@ function ContactMessages() {
         <DialogTitle>Message Details</DialogTitle>
         <DialogContent>
           {selectedMessage && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <Typography variant="h6">{selectedMessage.subject}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Name
-                </Typography>
-                <Typography variant="body1">{selectedMessage.name}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Email
-                </Typography>
-                <Typography variant="body1">{selectedMessage.email}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Phone
-                </Typography>
-                <Typography variant="body1">{selectedMessage.phone}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Date
-                </Typography>
-                <Typography variant="body1">
-                  {new Date(selectedMessage.createdAt).toLocaleString()}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Message
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                  {selectedMessage.message}
-                </Typography>
-              </Grid>
-            </Grid>
+            <Box sx={{ mt: 1 }}>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6">{selectedMessage.subject || 'No Subject'}</Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Name
+                  </Typography>
+                  <Typography variant="body1">{selectedMessage.fullName}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Email
+                  </Typography>
+                  <Typography variant="body1">{selectedMessage.emailAddress}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Phone
+                  </Typography>
+                  <Typography variant="body1">{selectedMessage.phoneNumber || 'N/A'}</Typography>
+                </Box>
+                {selectedMessage.serviceInterest && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Service Interest
+                    </Typography>
+                    <Typography variant="body1">{selectedMessage.serviceInterest}</Typography>
+                  </Box>
+                )}
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Date
+                  </Typography>
+                  <Typography variant="body1">
+                    {new Date(selectedMessage.created_at).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+              {selectedMessage.message && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Message
+                  </Typography>
+                  <Typography variant="body1" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                    {selectedMessage.message}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
           {selectedMessage && (
             <Button
-              onClick={() => handleReply(selectedMessage.email)}
+              onClick={() => handleReply(selectedMessage.emailAddress)}
               variant="contained"
               startIcon={<ReplyIcon />}
               sx={{ backgroundColor: 'primary.main' }}
@@ -311,6 +424,28 @@ function ContactMessages() {
           )}
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </PageContainer>
   )
 }

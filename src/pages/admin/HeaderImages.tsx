@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
   Card,
-  Grid,
   IconButton,
   Button,
   Dialog,
@@ -14,6 +13,11 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  Switch,
+  FormControlLabel,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -22,81 +26,157 @@ import {
   CloudUpload as UploadIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import {
+  getAllHeaderImages,
+  createHeaderImage,
+  updateHeaderImage,
+  deleteHeaderImage,
+  uploadHeaderImage,
+  type HeaderImage,
+} from '../../api/headerImages'
 
-const sampleHeaderImages = [
-  {
-    id: 1,
-    title: 'Homepage Header',
-    imageUrl: '/DIGIMAAX_LOGO-01 1.png',
-    order: 1,
-    isActive: true,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: 2,
-    title: 'About Page Header',
-    imageUrl: '/DIGIMAAX_LOGO-01 1.png',
-    order: 2,
-    isActive: true,
-    createdAt: '2024-01-14',
-  },
-]
+interface DisplayHeaderImage {
+  id?: number
+  title?: string
+  imageUrl: string
+  order: number
+  isActive: boolean
+  createdAt?: string
+}
 
 function HeaderImages() {
-  const [images, setImages] = useState(sampleHeaderImages)
-  const [selectedImage, setSelectedImage] = useState<any>(null)
+  const [images, setImages] = useState<HeaderImage[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<DisplayHeaderImage | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  // Fetch header images from backend
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getAllHeaderImages()
+        setImages(data)
+      } catch (err: any) {
+        console.error('Error fetching header images:', err)
+        setError(err?.response?.data?.message || 'Failed to fetch header images')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchImages()
+  }, [])
 
   const handleAdd = () => {
+    const maxOrder = images.length > 0 ? Math.max(...images.map((img) => img.order_no)) : 0
     setSelectedImage({
       title: '',
       imageUrl: '',
-      order: images.length + 1,
+      order: maxOrder + 1,
       isActive: true,
     })
     setAddDialogOpen(true)
   }
 
-  const handleEdit = (image: any) => {
-    setSelectedImage({ ...image })
+  const handleEdit = (image: HeaderImage) => {
+    setSelectedImage({
+      id: image.id,
+      title: '', // Backend doesn't have title field
+      imageUrl: image.img_url,
+      order: image.order_no,
+      isActive: image.is_active,
+      createdAt: image.created_at,
+    })
     setEditDialogOpen(true)
   }
 
-  const handleSave = () => {
-    if (selectedImage) {
+  const handleSave = async () => {
+    if (!selectedImage) return
+
+    try {
+      setUploading(true)
+      setError(null)
+
       if (selectedImage.id) {
-        setImages(images.map((img) => (img.id === selectedImage.id ? selectedImage : img)))
+        // Update existing image
+        const payload: any = {
+          id: selectedImage.id,
+          order_no: selectedImage.order,
+          is_active: selectedImage.isActive,
+        }
+
+        if (selectedImage.imageUrl) {
+          payload.img_url = selectedImage.imageUrl
+        }
+
+        const updated = await updateHeaderImage(payload)
+        setImages(images.map((img) => (img.id === updated.id ? updated : img)))
+        setSuccessMessage('Header image updated successfully')
         setEditDialogOpen(false)
       } else {
-        const newImage = {
-          ...selectedImage,
-          id: Date.now(),
-          createdAt: new Date().toISOString().split('T')[0],
+        // Create new image
+        const payload: any = {
+          order_no: selectedImage.order,
+          is_active: selectedImage.isActive,
         }
-        setImages([...images, newImage])
+
+        if (selectedImage.imageUrl) {
+          payload.img_url = selectedImage.imageUrl
+        }
+
+        const created = await createHeaderImage(payload)
+        setImages([...images, created])
+        setSuccessMessage('Header image created successfully')
         setAddDialogOpen(false)
       }
       setSelectedImage(null)
+    } catch (err: any) {
+      console.error('Error saving header image:', err)
+      setError(err?.response?.data?.message || 'Failed to save header image')
+    } finally {
+      setUploading(false)
     }
   }
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this header image?')) {
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this header image?')) {
+      return
+    }
+
+    try {
+      setError(null)
+      await deleteHeaderImage(id)
       setImages(images.filter((img) => img.id !== id))
+      setSuccessMessage('Header image deleted successfully')
+    } catch (err: any) {
+      console.error('Error deleting header image:', err)
+      setError(err?.response?.data?.message || 'Failed to delete header image')
     }
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        if (selectedImage) {
-          setSelectedImage({ ...selectedImage, imageUrl: reader.result as string })
-        }
+    if (!file) return
+
+    try {
+      setUploading(true)
+      setError(null)
+      const result = await uploadHeaderImage(file)
+      if (selectedImage) {
+        setSelectedImage({ ...selectedImage, imageUrl: result.url })
       }
-      reader.readAsDataURL(file)
+      setSuccessMessage('Image uploaded successfully')
+    } catch (err: any) {
+      console.error('Error uploading image:', err)
+      setError(err?.response?.data?.message || 'Failed to upload image')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -117,43 +197,63 @@ function HeaderImages() {
           </Button>
         </Box>
 
-        <ImageList cols={3} gap={16}>
-          {images.map((image) => (
-            <ImageListItem key={image.id}>
-              <Box
-                component="img"
-                src={image.imageUrl}
-                alt={image.title}
-                sx={{
-                  width: '100%',
-                  height: 200,
-                  objectFit: 'cover',
-                  borderRadius: 2,
-                }}
-              />
-              <ImageListItemBar
-                title={image.title}
-                subtitle={`Order: ${image.order} | ${image.isActive ? 'Active' : 'Inactive'}`}
-                actionIcon={
-                  <Box>
-                    <IconButton
-                      sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                      onClick={() => handleEdit(image)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                      onClick={() => handleDelete(image.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                }
-              />
-            </ImageListItem>
-          ))}
-        </ImageList>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : images.length === 0 ? (
+          <Box sx={{ textAlign: 'center', p: 4 }}>
+            <Typography variant="body2" color="text.secondary">
+              No header images found. Add your first header image.
+            </Typography>
+          </Box>
+        ) : (
+          <ImageList cols={3} gap={16}>
+            {images.map((image) => (
+              <ImageListItem key={image.id}>
+                <Box
+                  component="img"
+                  src={image.img_url}
+                  alt={`Header Image ${image.order_no}`}
+                  sx={{
+                    width: '100%',
+                    height: 200,
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-image.png'
+                  }}
+                />
+                <ImageListItemBar
+                  title={`Order: ${image.order_no}`}
+                  subtitle={image.is_active ? 'Active' : 'Inactive'}
+                  actionIcon={
+                    <Box>
+                      <IconButton
+                        sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                        onClick={() => handleEdit(image)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                        onClick={() => handleDelete(image.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                />
+              </ImageListItem>
+            ))}
+          </ImageList>
+        )}
       </Card>
 
       {/* Add/Edit Dialog */}
@@ -173,17 +273,12 @@ function HeaderImages() {
             <Box sx={{ mt: 2 }}>
               <TextField
                 fullWidth
-                label="Title"
-                value={selectedImage.title}
-                onChange={(e) => setSelectedImage({ ...selectedImage, title: e.target.value })}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
                 label="Image URL"
                 value={selectedImage.imageUrl}
                 onChange={(e) => setSelectedImage({ ...selectedImage, imageUrl: e.target.value })}
+                placeholder="Enter image URL or upload a file"
                 sx={{ mb: 2 }}
+                disabled={uploading}
               />
               <Button
                 variant="outlined"
@@ -191,8 +286,9 @@ function HeaderImages() {
                 startIcon={<UploadIcon />}
                 fullWidth
                 sx={{ mb: 2 }}
+                disabled={uploading}
               >
-                Upload Image
+                {uploading ? 'Uploading...' : 'Upload Image'}
                 <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
               </Button>
               {selectedImage.imageUrl && (
@@ -207,6 +303,10 @@ function HeaderImages() {
                     borderRadius: 1,
                     mb: 2,
                   }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-image.png'
+                  }}
                 />
               )}
               <TextField
@@ -217,6 +317,21 @@ function HeaderImages() {
                 onChange={(e) =>
                   setSelectedImage({ ...selectedImage, order: parseInt(e.target.value) || 0 })
                 }
+                sx={{ mb: 2 }}
+                disabled={uploading}
+                helperText="Order number determines display sequence"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedImage.isActive}
+                    onChange={(e) =>
+                      setSelectedImage({ ...selectedImage, isActive: e.target.checked })
+                    }
+                    disabled={uploading}
+                  />
+                }
+                label="Active"
                 sx={{ mb: 2 }}
               />
             </Box>
@@ -229,17 +344,46 @@ function HeaderImages() {
               setEditDialogOpen(false)
               setSelectedImage(null)
             }}
+            disabled={uploading}
           >
             Cancel
           </Button>
-          <Button onClick={handleSave} variant="contained" sx={{ backgroundColor: 'primary.main' }}>
-            Save
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            sx={{ backgroundColor: 'primary.main' }}
+            disabled={uploading || !selectedImage?.imageUrl || !selectedImage?.order}
+          >
+            {uploading ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </PageContainer>
   )
 }
 
 export default HeaderImages
+
 

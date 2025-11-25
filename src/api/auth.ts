@@ -1,5 +1,4 @@
 import apiClient, { clearAdminAuthToken, setAdminAuthToken } from './client'
-import { mockAuthService } from './mockData'
 
 type AuthResponse = {
   token?: string
@@ -20,26 +19,12 @@ const persistSession = (data: AuthResponse) => {
   }
 }
 
-// Check if error is a connection error
-const isConnectionError = (error: any): boolean => {
-  return (
-    error?.code === 'ECONNREFUSED' ||
-    error?.code === 'ERR_NETWORK' ||
-    error?.message?.includes('Network Error') ||
-    error?.message?.includes('ERR_CONNECTION_REFUSED') ||
-    (error?.response?.status === undefined && error?.request)
-  )
-}
 
-export async function registerAdmin(payload: { name: string; email: string; password: string }) {
+export async function registerAdmin(payload: { firstName: string; lastName: string; email: string; phoneNumber: string; password: string; userRoleId: number }) {
   try {
-    const { data } = await apiClient.post('/auth/register', payload)
-    return data?.message || 'Registration successful. Please sign in.'
+    const { data } = await apiClient.post('/api/user/register', payload)
+    return data?.message || 'Registration successful. Please verify your email.'
   } catch (error: any) {
-    if (isConnectionError(error)) {
-      console.warn('⚠️ Backend unavailable. Using mock data for registration.')
-      return await mockAuthService.register(payload.name, payload.email, payload.password)
-    }
     throw error
   }
 }
@@ -48,14 +33,20 @@ export async function loginAdmin(payload: { email: string; password: string }) {
   if (!payload.email || !payload.password) throw new Error('Email and password are required')
   
   try {
-    const { data } = await apiClient.post<AuthResponse>('/auth/login', payload)
+    const { data } = await apiClient.post<AuthResponse>('/api/user/adminLogin', payload)
     return persistSession(data || {})
   } catch (error: any) {
-    if (isConnectionError(error)) {
-      console.warn('⚠️ Backend unavailable. Using mock data for login.')
-      const mockResponse = await mockAuthService.login(payload.email, payload.password)
-      return persistSession(mockResponse)
-    }
+    throw error
+  }
+}
+
+export async function loginDeveloper(payload: { email: string; password: string }) {
+  if (!payload.email || !payload.password) throw new Error('Email and password are required')
+  
+  try {
+    const { data } = await apiClient.post<AuthResponse>('/api/user/developerLogin', payload)
+    return persistSession(data || {})
+  } catch (error: any) {
     throw error
   }
 }
@@ -64,40 +55,36 @@ export async function forgotPassword(email: string) {
   if (!email) throw new Error('Email is required')
   
   try {
-    const { data } = await apiClient.post('/auth/forgot-password', { email })
-    return data?.message || 'Password reset link sent to your email.'
+    const { data } = await apiClient.post('/api/user/forgot-password', { email })
+    return data?.message || 'Password reset OTP sent to your email.'
   } catch (error: any) {
-    if (isConnectionError(error)) {
-      console.warn('⚠️ Backend unavailable. Using mock data for forgot password.')
-      return await mockAuthService.forgotPassword(email)
-    }
     throw error
   }
 }
 
-export async function resetPassword(payload: { token: string; password: string }) {
-  if (!payload.token) throw new Error('Reset token is required')
+export async function verifyEmail(payload: { email: string; otp: string }) {
+  if (!payload.otp || !payload.email) throw new Error('OTP and email are required')
   
   try {
-    const { data } = await apiClient.post('/auth/reset-password', payload)
+    const { data } = await apiClient.post('/api/user/verify-email', payload)
+    return data?.message || 'Email verified successfully.'
+  } catch (error: any) {
+    throw error
+  }
+}
+
+export async function resetPassword(payload: { otp: string; email: string; newPassword: string }) {
+  if (!payload.otp || !payload.email || !payload.newPassword) throw new Error('OTP, email, and new password are required')
+  
+  try {
+    const { data } = await apiClient.post('/api/user/reset-password', payload)
     return data?.message || 'Password reset successfully.'
   } catch (error: any) {
-    if (isConnectionError(error)) {
-      console.warn('⚠️ Backend unavailable. Using mock data for reset password.')
-      return await mockAuthService.resetPassword(payload.token, payload.password)
-    }
     throw error
   }
 }
 
 export async function logoutAdmin() {
-  try {
-    await apiClient.post('/auth/logout')
-  } catch (error: any) {
-    if (isConnectionError(error)) {
-      console.warn('⚠️ Backend unavailable. Using mock data for logout.')
-      await mockAuthService.logout()
-    }
-  }
+  // Backend doesn't have a logout endpoint, just clear local storage
   clearAdminAuthToken()
 }

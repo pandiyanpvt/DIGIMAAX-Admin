@@ -1,7 +1,7 @@
 // Admin Pages Exports
 export { default as AdminDashboard } from './Dashboard'
 export { default as AdminsManagement } from './AdminsManagement'
-export { default as UsersManagement } from './UsersManagement'
+export { default as UsersManagement } from '../developer/UsersManagement'
 export { default as BookingsManagement } from './BookingsManagement'
 export { default as CustomersManagement } from './CustomersManagement'
 export { default as ServicesManagement } from './ServicesManagement'
@@ -20,5 +20,5 @@ export { default as Products } from './Products'
 export { default as Orders } from './Orders'
 export { default as Payments } from './Payments'
 // Dev View Pages
-export { default as UserRoleManagement } from './UserRoleManagement'
-export { default as CartDetails } from './CartDetails'
+export { default as UserRoleManagement } from '../developer/UserRoleManagement'
+export { default as CartDetails } from '../developer/CartDetails'

@@ -29,35 +29,37 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
-import { getCurrentUserRole } from '../../constants/roles'
-import { getAllUsers, updateUser, deleteUser, type User } from '../../api/users'
+import { getCurrentUserRole, rolePermissions } from '../../constants/roles'
+import { getAllUsers, createUser, updateUser, deleteUser, type User } from '../../api/users'
 import { registerAdmin } from '../../api/auth'
 import { getAllUserRoles } from '../../api/userRoles'
 import { Alert, CircularProgress } from '@mui/material'
 
-function AdminsManagement() {
-  const [admins, setAdmins] = useState<User[]>([])
+const roleColors: Record<string, string> = {
+  user: '#4caf50',
+}
+
+function UsersManagement() {
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingAdmin, setEditingAdmin] = useState<User | null>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
   const [userRoles, setUserRoles] = useState<Array<{ id: number; name: string }>>([])
+  const currentRole = getCurrentUserRole()
+  const permissions = rolePermissions[currentRole]
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phoneNumber: '',
-    userRoleId: 1, // Default to Admin role (ID 1)
+    userRoleId: 2, // Default to User role (ID 2)
     password: '',
   })
 
-  const currentRole = getCurrentUserRole()
-  const canEdit = currentRole === 'superadmin'
-
-  // Fetch admins and roles on mount
+  // Fetch users and roles on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,16 +68,16 @@ function AdminsManagement() {
         
         // Fetch all users
         const usersData = await getAllUsers()
-        // Filter to show only Admin (ID 1) and Developer (ID 3) roles
-        const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
-        setAdmins(adminUsers)
+        // Filter to show only users with role "User" (userRoleId = 2)
+        const shopWorkers = usersData.filter(user => user.userRoleId === 2)
+        setUsers(shopWorkers)
         
         // Fetch user roles to map role names to IDs
         const roles = await getAllUserRoles()
         setUserRoles(roles)
       } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'Failed to fetch admins')
-        console.error('Error fetching admins:', err)
+        setError(err?.response?.data?.message || err?.message || 'Failed to fetch users')
+        console.error('Error fetching users:', err)
       } finally {
         setLoading(false)
       }
@@ -85,26 +87,26 @@ function AdminsManagement() {
   }, [])
 
   const handleAdd = () => {
-    setEditingAdmin(null)
+    setEditingUser(null)
     setFormData({
       firstName: '',
       lastName: '',
       email: '',
       phoneNumber: '',
-      userRoleId: 1, // Default to Admin
+      role: 'user',
       password: '',
     })
     setDialogOpen(true)
   }
 
-  const handleEdit = (admin: User) => {
-    setEditingAdmin(admin)
+  const handleEdit = (user: User) => {
+    setEditingUser(user)
     setFormData({
-      firstName: admin.firstName,
-      lastName: admin.lastName,
-      email: admin.email,
-      phoneNumber: admin.phoneNumber || '',
-      userRoleId: admin.userRoleId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      userRoleId: user.userRoleId,
       password: '',
     })
     setDialogOpen(true)
@@ -114,10 +116,10 @@ function AdminsManagement() {
     try {
       setError(null)
       
-      if (editingAdmin) {
-        // Update existing admin
-        const updatedAdmin = await updateUser({
-          id: editingAdmin.id,
+      if (editingUser) {
+        // Update existing user
+        const updatedUser = await updateUser({
+          id: editingUser.id,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -125,14 +127,14 @@ function AdminsManagement() {
           userRoleId: formData.userRoleId,
         })
         
-        // Refresh admins list
+        // Refresh users list
         const usersData = await getAllUsers()
-        const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
-        setAdmins(adminUsers)
+        const shopWorkers = usersData.filter(user => user.userRoleId === 2)
+        setUsers(shopWorkers)
       } else {
-        // Create new admin
+        // Create new user
         if (!formData.password) {
-          setError('Password is required for new admins')
+          setError('Password is required for new users')
           return
         }
         
@@ -145,10 +147,10 @@ function AdminsManagement() {
           userRoleId: formData.userRoleId,
         })
         
-        // Refresh admins list
+        // Refresh users list
         const usersData = await getAllUsers()
-        const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
-        setAdmins(adminUsers)
+        const shopWorkers = usersData.filter(user => user.userRoleId === 2)
+        setUsers(shopWorkers)
       }
       
       setDialogOpen(false)
@@ -157,46 +159,38 @@ function AdminsManagement() {
         lastName: '',
         email: '',
         phoneNumber: '',
-        userRoleId: 1,
+        userRoleId: 2,
         password: '',
       })
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to save admin')
-      console.error('Error saving admin:', err)
+      setError(err?.response?.data?.message || err?.message || 'Failed to save user')
+      console.error('Error saving user:', err)
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this admin?')) {
+    if (window.confirm('Are you sure you want to delete this shop worker?')) {
       try {
         setError(null)
         await deleteUser(id)
         
-        // Refresh admins list
+        // Refresh users list
         const usersData = await getAllUsers()
-        const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
-        setAdmins(adminUsers)
+        const shopWorkers = usersData.filter(user => user.userRoleId === 2)
+        setUsers(shopWorkers)
       } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'Failed to delete admin')
-        console.error('Error deleting admin:', err)
+        setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
+        console.error('Error deleting user:', err)
       }
     }
   }
 
+  const canManage = permissions.canManageUsers
+
   // Get role name for display
   const getRoleName = (userRoleId: number): string => {
     const role = userRoles.find(r => r.id === userRoleId)
-    return role?.name || 'Admin'
-  }
-
-  // Check if user is superadmin/developer
-  const isSuperAdmin = (userRoleId: number): boolean => {
-    return userRoleId === 3 // Developer role ID
-  }
-
-  const roleColors: Record<string, string> = {
-    superadmin: '#f44336',
-    admin: '#2196f3',
+    return role?.name || 'User'
   }
 
   if (loading) {
@@ -212,16 +206,16 @@ function AdminsManagement() {
       <Card sx={{ p: 3, borderRadius: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Admins Management
+            Shop Workers Management
           </Typography>
-          {canEdit && (
+          {canManage && (
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleAdd}
               sx={{ backgroundColor: 'primary.main' }}
             >
-              Add Admin
+              Add Shop Worker
             </Button>
           )}
         </Box>
@@ -236,91 +230,83 @@ function AdminsManagement() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Admin</TableCell>
+                <TableCell>Shop Worker</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Last Login</TableCell>
-                <TableCell>Actions</TableCell>
+                {canManage && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
-              {admins.length === 0 ? (
+              {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     <Typography variant="body2" color="text.secondary">
-                      No admins found
+                      No shop workers found
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                admins.map((admin) => {
-                  const roleName = getRoleName(admin.userRoleId)
-                  const isDev = isSuperAdmin(admin.userRoleId)
-                  return (
-                    <TableRow key={admin.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ backgroundColor: isDev ? roleColors.superadmin : roleColors.admin }}>
-                            <AdminIcon />
-                          </Avatar>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {admin.firstName} {admin.lastName}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>{admin.email}</TableCell>
-                      <TableCell>{admin.phoneNumber || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={isDev ? 'Super Admin' : 'Admin'}
-                          size="small"
-                          sx={{
-                            backgroundColor: isDev ? roleColors.superadmin : roleColors.admin,
-                            color: 'white',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={admin.is_verified ? 'Verified' : 'Unverified'}
-                          size="small"
-                          color={admin.is_verified ? 'success' : 'default'}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {admin.updated_at
-                          ? new Date(admin.updated_at).toLocaleString()
-                          : 'Never'}
-                      </TableCell>
+                users.map((user) => (
+                  <TableRow key={user.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ backgroundColor: roleColors['user'] }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {user.firstName} {user.lastName}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phoneNumber}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label="Shop Worker"
+                        size="small"
+                        sx={{
+                          backgroundColor: roleColors['user'],
+                          color: 'white',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.is_verified ? 'Verified' : 'Unverified'}
+                        size="small"
+                        color={user.is_verified ? 'success' : 'default'}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {user.updated_at
+                        ? new Date(user.updated_at).toLocaleString()
+                        : 'Never'}
+                    </TableCell>
+                    {canManage && (
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          {canEdit && (
-                            <>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEdit(admin)}
-                                color="primary"
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              {!isDev && (
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDelete(admin.id)}
-                                  color="error"
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              )}
-                            </>
-                          )}
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(user)}
+                            color="primary"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(user.id)}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
                         </Box>
                       </TableCell>
-                    </TableRow>
-                  )
-                })
+                    )}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
@@ -328,9 +314,9 @@ function AdminsManagement() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      {canEdit && (
+      {canManage && (
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingAdmin ? 'Edit Admin' : 'Add New Admin'}</DialogTitle>
+          <DialogTitle>{editingUser ? 'Edit Shop Worker' : 'Add New Shop Worker'}</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
@@ -377,10 +363,10 @@ function AdminsManagement() {
                     }
                   >
                     {userRoles
-                      .filter(role => role.name === 'Admin' || role.name === 'Developer' || role.id === 1 || role.id === 3)
+                      .filter(role => role.name === 'User' || role.id === 2)
                       .map((role) => (
                         <MenuItem key={role.id} value={role.id}>
-                          {role.name === 'Developer' || role.id === 3 ? 'Super Admin' : 'Admin'}
+                          Shop Worker
                         </MenuItem>
                       ))}
                   </Select>
@@ -389,7 +375,7 @@ function AdminsManagement() {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={editingAdmin ? 'New Password (leave blank to keep current)' : 'Password'}
+                  label={editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -409,5 +395,5 @@ function AdminsManagement() {
   )
 }
 
-export default AdminsManagement
+export default UsersManagement
 

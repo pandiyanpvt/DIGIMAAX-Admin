@@ -1,5 +1,18 @@
 export type UserRole = 'superadmin' | 'admin' | 'user'
 
+const roleIdToRole: Record<number, UserRole> = {
+  1: 'admin',
+  2: 'user',
+  3: 'superadmin',
+}
+
+const envSiteUrl =
+  (import.meta as any)?.env?.VITE_DIGIMAAX_SITE_URL?.trim?.() ||
+  (typeof window !== 'undefined' && (window as any).__DIGIMAAX_SITE_URL__) ||
+  ''
+
+export const DIGIMAAX_PUBLIC_SITE_URL = envSiteUrl || 'https://digimaax.com'
+
 export const roleLabels: Record<UserRole, string> = {
   superadmin: 'Super Admin',
   admin: 'Admin',
@@ -87,15 +100,22 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
   },
 }
 
-export const resolveUserRole = (role?: string | null): UserRole => {
-  // Support legacy role names for backward compatibility
-  if (role === 'developer' || role === 'superadmin') {
+const normalizeRoleText = (role?: string | null) => role?.toString().trim().toLowerCase() || ''
+
+export const resolveUserRole = (role?: string | null, roleId?: number | null): UserRole => {
+  if (typeof roleId === 'number' && roleIdToRole[roleId]) {
+    return roleIdToRole[roleId]
+  }
+
+  const normalizedRole = normalizeRoleText(role)
+
+  if (normalizedRole === 'developer' || normalizedRole === 'superadmin' || normalizedRole === 'super admin') {
     return 'superadmin'
   }
-  if (role === 'booking' || role === 'user') {
+  if (normalizedRole === 'booking' || normalizedRole === 'user') {
     return 'user'
   }
-  if (role === 'admin') {
+  if (normalizedRole === 'admin') {
     return 'admin'
   }
   return 'user' // Default to user for safety
@@ -107,7 +127,12 @@ export const getCurrentUserRole = (): UserRole => {
     const stored = localStorage.getItem('adminAuth')
     if (stored) {
       const { user } = JSON.parse(stored)
-      return resolveUserRole(user?.role || user?.roleName)
+      const rawRoleId = user?.userRoleId
+      const parsedRoleId =
+        rawRoleId === undefined || rawRoleId === null ? undefined : Number(rawRoleId)
+      const resolvedRoleId =
+        typeof parsedRoleId === 'number' && Number.isFinite(parsedRoleId) ? parsedRoleId : undefined
+      return resolveUserRole(user?.role || user?.roleName, resolvedRoleId)
     }
   } catch {}
   return 'user'
@@ -117,6 +142,32 @@ export const getCurrentUserRole = (): UserRole => {
 export const hasPermission = (permission: keyof Omit<RolePermissionConfig, 'navigation' | 'assignableRoles'>): boolean => {
   const role = getCurrentUserRole()
   return rolePermissions[role][permission]
+}
+
+// Helper function to get current user data from localStorage
+export const getCurrentUser = () => {
+  try {
+    const stored = localStorage.getItem('adminAuth')
+    if (stored) {
+      const { user } = JSON.parse(stored)
+      return user || null
+    }
+  } catch {}
+  return null
+}
+
+// Helper function to get user's username/email
+export const getCurrentUsername = (): string | null => {
+  const user = getCurrentUser()
+  if (!user) return null
+  
+  // Check email first, then firstName, then name
+  return user.email || user.firstName || user.name || null
+}
+
+export const redirectToPublicSite = () => {
+  if (typeof window === 'undefined') return
+  window.location.replace(DIGIMAAX_PUBLIC_SITE_URL)
 }
 
 
