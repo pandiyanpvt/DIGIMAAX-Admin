@@ -23,7 +23,7 @@ import {
   Alert,
   Paper,
 } from '@mui/material'
-import Grid from '@mui/material/GridLegacy'
+import Grid from '@mui/material/Grid'
 import PageContainer from '../../components/common/PageContainer'
 import {
   Edit as EditIcon,

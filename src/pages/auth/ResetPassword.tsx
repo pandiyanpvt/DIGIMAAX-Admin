@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { Alert, Box, Button, Container, Paper, TextField, Typography, Link as MuiLink } from '@mui/material'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { resetPassword } from '../../api/auth'
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
-  const token = searchParams.get('token') || ''
+  // Get email from location state (set by ForgotPassword page) or use empty string
+  const emailFromState = (location.state as any)?.email || ''
 
-  const [form, setForm] = useState({ password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ 
+    email: emailFromState,
+    otp: '', 
+    password: '', 
+    confirmPassword: '' 
+  })
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -20,12 +26,20 @@ export default function ResetPassword() {
     event.preventDefault()
     setFeedback(null)
 
-    if (!token) {
-      setFeedback({ type: 'error', message: 'Reset token is missing or invalid.' })
+    if (!form.email.trim()) {
+      setFeedback({ type: 'error', message: 'Email is required.' })
+      return
+    }
+    if (!form.otp.trim()) {
+      setFeedback({ type: 'error', message: 'OTP is required.' })
       return
     }
     if (!form.password || !form.confirmPassword) {
       setFeedback({ type: 'error', message: 'Please fill in both password fields.' })
+      return
+    }
+    if (form.password.length < 6) {
+      setFeedback({ type: 'error', message: 'Password must be at least 6 characters long.' })
       return
     }
     if (form.password !== form.confirmPassword) {
@@ -35,9 +49,13 @@ export default function ResetPassword() {
 
     setLoading(true)
     try {
-      const message = await resetPassword({ token, password: form.password })
-      setFeedback({ type: 'success', message })
-      setTimeout(() => navigate('/login', { replace: true }), 1500)
+      const message = await resetPassword({ 
+        email: form.email.trim(), 
+        otp: form.otp.trim(), 
+        newPassword: form.password 
+      })
+      setFeedback({ type: 'success', message: message || 'Password reset successfully.' })
+      setTimeout(() => navigate('/login', { replace: true }), 2000)
     } catch (err: any) {
       setFeedback({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to reset password.' })
     } finally {
@@ -142,20 +160,9 @@ export default function ResetPassword() {
               Reset Password
             </Typography>
           </Box>
-          {!token && (
-            <Alert
-              severity="warning"
-              sx={{
-                mb: 2,
-                bgcolor: 'rgba(255, 152, 0, 0.15)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 152, 0, 0.3)',
-                color: '#ffe0b2',
-              }}
-            >
-              This link is invalid or expired. Please request a new password reset email.
-            </Alert>
-          )}
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
+            Enter your email, the OTP sent to your email, and your new password.
+          </Typography>
           {feedback && (
             <Alert
               severity={feedback.type}
@@ -171,6 +178,73 @@ export default function ResetPassword() {
             </Alert>
           )}
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={handleChange('email')}
+              required
+              fullWidth
+              disabled={!!emailFromState}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.35)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: 'rgba(102, 126, 234, 0.9)',
+                  },
+                },
+              }}
+            />
+            <TextField
+              label="OTP Code"
+              type="text"
+              value={form.otp}
+              onChange={handleChange('otp')}
+              required
+              fullWidth
+              placeholder="Enter the 6-digit OTP"
+              inputProps={{ maxLength: 6 }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.35)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: 'rgba(102, 126, 234, 0.9)',
+                  },
+                },
+              }}
+            />
             <TextField
               label="New Password"
               type="password"
@@ -238,7 +312,7 @@ export default function ResetPassword() {
             <Button
               type="submit"
               variant="contained"
-              disabled={loading || !token}
+              disabled={loading || !form.email || !form.otp}
               sx={{
                 mt: 1,
                 py: 1.5,

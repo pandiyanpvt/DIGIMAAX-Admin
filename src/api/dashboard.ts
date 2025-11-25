@@ -1,0 +1,136 @@
+import apiClient from './client'
+import { getAllOrders } from './orders'
+import { getAllProducts } from './products'
+import { getAllUsers } from './users'
+
+export interface DashboardStats {
+  totalOrders: number
+  totalRevenue: number
+  totalCustomers: number
+  totalProducts: number
+  pendingOrders: number
+  completedOrders: number
+  monthlyRevenue: number
+  averageOrderValue: number
+}
+
+export interface RevenueData {
+  month: string
+  revenue: number
+  orders: number
+}
+
+export interface OrderStatusData {
+  status: string
+  count: number
+}
+
+// Get dashboard statistics
+export async function getDashboardStats(): Promise<DashboardStats> {
+  try {
+    // Since backend doesn't have a dedicated dashboard endpoint,
+    // we'll aggregate data from multiple endpoints
+    const [orders, products, users] = await Promise.all([
+      getAllOrders().catch(() => []),
+      getAllProducts().catch(() => []),
+      getAllUsers().catch(() => []),
+    ])
+
+    const totalOrders = orders.length
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const totalCustomers = users.filter(user => user.roleName !== 'Admin').length
+    const totalProducts = products.length
+    const pendingOrders = orders.filter(order => order.status === 'pending').length
+    const completedOrders = orders.filter(order => order.status === 'delivered').length
+    
+    const currentMonth = new Date().getMonth()
+    const currentYear = new Date().getFullYear()
+    const monthlyOrders = orders.filter(order => {
+      const orderDate = new Date(order.created_at)
+      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
+    })
+    const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+
+    return {
+      totalOrders,
+      totalRevenue,
+      totalCustomers,
+      totalProducts,
+      pendingOrders,
+      completedOrders,
+      monthlyRevenue,
+      averageOrderValue,
+    }
+  } catch (error: any) {
+    console.error('Error fetching dashboard stats:', error)
+    throw error
+  }
+}
+
+// Get revenue data for charts
+export async function getRevenueData(months: number = 6): Promise<RevenueData[]> {
+  try {
+    const orders = await getAllOrders().catch(() => [])
+    
+    // Group orders by month
+    const revenueByMonth: { [key: string]: { revenue: number; orders: number } } = {}
+    
+    orders.forEach(order => {
+      const date = new Date(order.created_at)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      
+      if (!revenueByMonth[monthKey]) {
+        revenueByMonth[monthKey] = { revenue: 0, orders: 0 }
+      }
+      
+      revenueByMonth[monthKey].revenue += order.total || 0
+      revenueByMonth[monthKey].orders += 1
+    })
+    
+    // Get last N months
+    const result: RevenueData[] = []
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    for (let i = months - 1; i >= 0; i--) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const monthName = monthNames[date.getMonth()]
+      
+      result.push({
+        month: monthName,
+        revenue: revenueByMonth[monthKey]?.revenue || 0,
+        orders: revenueByMonth[monthKey]?.orders || 0,
+      })
+    }
+    
+    return result
+  } catch (error: any) {
+    console.error('Error fetching revenue data:', error)
+    throw error
+  }
+}
+
+// Get order status distribution
+export async function getOrderStatusData(): Promise<OrderStatusData[]> {
+  try {
+    const orders = await getAllOrders().catch(() => [])
+    
+    const statusCounts: { [key: string]: number } = {}
+    orders.forEach(order => {
+      const status = order.status || 'unknown'
+      statusCounts[status] = (statusCounts[status] || 0) + 1
+    })
+    
+    return Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      count,
+    }))
+  } catch (error: any) {
+    console.error('Error fetching order status data:', error)
+    throw error
+  }
+}
+

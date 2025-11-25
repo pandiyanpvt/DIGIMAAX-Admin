@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Box,
   Typography,
@@ -16,28 +16,69 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
 } from '@mui/material'
 import {
   Search as SearchIcon,
   History as HistoryIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
-import { mockAuditLogs, type MockAuditLog } from '../../utils/mockData'
+import apiClient from '../../api/client'
+
+type AuditLog = {
+  id: number | string
+  userName: string
+  action: string
+  resource: string
+  details: string
+  ipAddress?: string
+  timestamp: string
+}
 
 function AuditLogs() {
-  const [logs] = useState<MockAuditLog[]>(mockAuditLogs)
+  const [logs, setLogs] = useState<AuditLog[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterAction, setFilterAction] = useState<string>('all')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch =
-      log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.resource.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.details.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesAction = filterAction === 'all' || log.action === filterAction
-    return matchesSearch && matchesAction
-  })
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { data } = await apiClient.get('/api/audit-logs')
+        if (Array.isArray(data?.logs)) {
+          setLogs(data.logs)
+        } else if (Array.isArray(data)) {
+          setLogs(data)
+        } else {
+          setLogs([])
+        }
+      } catch (err: any) {
+        console.warn('Audit log endpoint not available yet.', err)
+        setError(
+          'Audit log service is not available on the backend. Please implement /api/audit-logs to enable this view.'
+        )
+        setLogs([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchLogs()
+  }, [])
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      const matchesSearch =
+        log.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.resource?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.details?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesAction = filterAction === 'all' || log.action === filterAction
+      return matchesSearch && matchesAction
+    })
+  }, [logs, searchTerm, filterAction])
 
   const actionColors: Record<string, string> = {
     CREATE: '#4caf50',
@@ -89,6 +130,12 @@ function AuditLogs() {
           </FormControl>
         </Box>
 
+        {error && (
+          <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
         <TableContainer>
           <Table>
             <TableHead>
@@ -102,7 +149,13 @@ function AuditLogs() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredLogs.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <CircularProgress size={24} />
+                  </TableCell>
+                </TableRow>
+              ) : filteredLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     <Typography variant="body2" color="text.secondary">
@@ -114,11 +167,11 @@ function AuditLogs() {
                 filteredLogs.map((log) => (
                   <TableRow key={log.id} hover>
                     <TableCell>
-                      {new Date(log.timestamp).toLocaleString()}
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {log.userName}
+                        {log.userName || 'Unknown'}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -131,10 +184,10 @@ function AuditLogs() {
                         }}
                       />
                     </TableCell>
-                    <TableCell>{log.resource}</TableCell>
+                    <TableCell>{log.resource || '—'}</TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ maxWidth: 400 }}>
-                        {log.details}
+                        {log.details || '—'}
                       </Typography>
                     </TableCell>
                     <TableCell>

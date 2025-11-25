@@ -19,7 +19,7 @@ import {
   Chip,
   Avatar,
 } from '@mui/material'
-import Grid from '@mui/material/GridLegacy'
+import Grid from '@mui/material/Grid'
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,

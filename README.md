@@ -22,6 +22,41 @@ The application requires a backend API server to function. Configure the API URL
 
 > **Note:** The application now includes **mock data** support. If the backend server is not running or unavailable, the app will automatically use mock data for authentication and other features. You'll see a warning in the console when mock data is being used.
 
+### API Integration
+
+The admin panel is now fully integrated with the Digimaax Backend API. All API services are available in the `src/api/` directory:
+
+- **Authentication** (`auth.ts`): Login, register, password reset
+- **Dashboard** (`dashboard.ts`): Statistics and analytics
+- **Orders** (`orders.ts`): Order management
+- **Products** (`products.ts`): Product CRUD operations
+- **Categories** (`categories.ts`): Product category management
+- **Users** (`users.ts`): User management
+- **Contact** (`contact.ts`): Contact message management
+- **Gallery** (`gallery.ts`): Gallery image management
+- **Header Images** (`headerImages.ts`): Header image management
+- **Payments** (`payments.ts`): Payment and refund management
+- **Social Media** (`socialMedia.ts`): Social media link management
+- **User Roles** (`userRoles.ts`): User role management
+
+### Backend Requirements
+
+The admin panel expects the following backend endpoints:
+
+- `POST /api/user/adminLogin` - Admin login
+- `POST /api/user/register` - User registration
+- `POST /api/user/forgot-password` - Password reset request
+- `POST /api/user/reset-password` - Password reset
+- `GET /api/user/getAll` - Get all users (admin)
+- `GET /api/products` - Get all products
+- `GET /api/categories` - Get all categories
+- `GET /api/contact/getAll` - Get all contact messages (admin)
+- `GET /api/gallery/getAll` - Get all gallery images
+- `GET /api/header-images/getAll` - Get all header images
+- And more...
+
+**Note:** The backend currently doesn't have an admin endpoint to get all orders. You may need to add `GET /api/orders/admin/getAll` to the backend for full order management functionality.
+
 ### Mock Data Mode
 
 When the backend is unavailable, the application automatically switches to mock data mode:

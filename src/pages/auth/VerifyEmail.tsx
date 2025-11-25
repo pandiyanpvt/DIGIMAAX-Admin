@@ -1,34 +1,52 @@
 import { useState } from 'react'
 import { Alert, Box, Button, Container, Paper, TextField, Typography, Link as MuiLink } from '@mui/material'
-import { Link, useNavigate } from 'react-router-dom'
-import { forgotPassword } from '../../api/auth'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { verifyEmail } from '../../api/auth'
 
-export default function ForgotPassword() {
+export default function VerifyEmail() {
+  const location = useLocation()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  // Get email from location state (set by Register page) or use empty string
+  const emailFromState = (location.state as any)?.email || ''
+
+  const [form, setForm] = useState({ 
+    email: emailFromState,
+    otp: '' 
+  })
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const handleChange = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }))
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setFeedback(null)
-    if (!email.trim()) {
-      setFeedback({ type: 'error', message: 'Please enter your email address.' })
+
+    if (!form.email.trim()) {
+      setFeedback({ type: 'error', message: 'Email is required.' })
       return
     }
+    if (!form.otp.trim()) {
+      setFeedback({ type: 'error', message: 'OTP is required.' })
+      return
+    }
+    if (form.otp.trim().length !== 6) {
+      setFeedback({ type: 'error', message: 'OTP must be 6 digits.' })
+      return
+    }
+
     setLoading(true)
     try {
-      const message = await forgotPassword(email.trim())
-      setFeedback({ type: 'success', message: message || 'Password reset OTP sent to your email. Please check your inbox.' })
-      // Navigate to reset password page after a delay
-      setTimeout(() => {
-        navigate('/reset-password', { 
-          state: { email: email.trim() },
-          replace: false 
-        })
-      }, 2000)
+      const message = await verifyEmail({ 
+        email: form.email.trim(), 
+        otp: form.otp.trim()
+      })
+      setFeedback({ type: 'success', message: message || 'Email verified successfully.' })
+      setTimeout(() => navigate('/login', { replace: true }), 2000)
     } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to process request.' })
+      setFeedback({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to verify email.' })
     } finally {
       setLoading(false)
     }
@@ -128,11 +146,11 @@ export default function ForgotPassword() {
                 backgroundClip: 'text',
               }}
             >
-              Forgot Password
+              Verify Email
             </Typography>
           </Box>
           <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
-            Enter your email and we&apos;ll send you a password reset link.
+            Enter the 6-digit OTP code sent to your email address.
           </Typography>
           {feedback && (
             <Alert
@@ -152,10 +170,45 @@ export default function ForgotPassword() {
             <TextField
               label="Email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={handleChange('email')}
               required
               fullWidth
+              disabled={!!emailFromState}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.35)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: 'rgba(102, 126, 234, 0.9)',
+                  },
+                },
+              }}
+            />
+            <TextField
+              label="OTP Code"
+              type="text"
+              value={form.otp}
+              onChange={handleChange('otp')}
+              required
+              fullWidth
+              placeholder="Enter 6-digit OTP"
+              inputProps={{ maxLength: 6, pattern: '[0-9]*' }}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   color: 'white',
@@ -184,7 +237,7 @@ export default function ForgotPassword() {
             <Button
               type="submit"
               variant="contained"
-              disabled={loading}
+              disabled={loading || !form.email || !form.otp}
               sx={{
                 mt: 1,
                 py: 1.5,
@@ -207,11 +260,11 @@ export default function ForgotPassword() {
                 transition: 'all 0.3s ease',
               }}
             >
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              {loading ? 'Verifying...' : 'Verify Email'}
             </Button>
           </Box>
           <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'rgba(255, 255, 255, 0.6)' }}>
-            Remembered your password?{' '}
+            Back to{' '}
             <MuiLink
               component={Link}
               to="/login"
@@ -226,7 +279,7 @@ export default function ForgotPassword() {
                 transition: 'color 0.3s ease',
               }}
             >
-              Back to login
+              login
             </MuiLink>
           </Typography>
         </Paper>

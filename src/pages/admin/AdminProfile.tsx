@@ -4,51 +4,201 @@ import {
   Button,
   Card,
   Chip,
+  CircularProgress,
   Divider,
   IconButton,
   Stack,
   TextField,
   Typography,
+  Alert,
 } from '@mui/material'
-import Grid from '@mui/material/GridLegacy'
 import { Edit as EditIcon, Email as EmailIcon, Phone as PhoneIcon, LocationOn, MoreHoriz as MoreIcon } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getCurrentUserProfile, updateCurrentUserProfile, type User } from '../../api/users'
+import { getCurrentUser } from '../../constants/roles'
+import { setAdminAuthToken } from '../../api/client'
+import { format } from 'date-fns'
 
-const initialProfile = {
-  name: 'Alex Carter',
-  role: 'Super Admin',
-  email: 'alex.carter@digimaax.com',
-  phone: '+1 (555) 123-4567',
-  location: 'San Francisco, CA',
-  status: 'Active',
-  memberSince: 'March 2022',
+interface ProfileData {
+  name: string
+  firstName: string
+  lastName: string
+  role: string
+  email: string
+  phone: string
+  location: string
+  status: string
+  memberSince: string
 }
 
+const getInitialProfile = (): ProfileData => ({
+  name: '',
+  firstName: '',
+  lastName: '',
+  role: 'Admin',
+  email: '',
+  phone: '',
+  location: '',
+  status: 'Active',
+  memberSince: '',
+})
+
 function AdminProfile() {
-  const [profileData, setProfileData] = useState(initialProfile)
-  const [draftProfile, setDraftProfile] = useState(initialProfile)
+  const [profileData, setProfileData] = useState<ProfileData>(getInitialProfile())
+  const [draftProfile, setDraftProfile] = useState<ProfileData>(getInitialProfile())
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Map backend user data to frontend profile format
+  const mapUserToProfile = (user: User): ProfileData => {
+    const currentUser = getCurrentUser()
+    const memberSince = user.created_at 
+      ? format(new Date(user.created_at), 'MMMM yyyy')
+      : 'N/A'
+    
+    return {
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      role: user.roleName || currentUser?.roleName || 'Admin',
+      email: user.email || '',
+      phone: user.phoneNumber || '',
+      location: '', // Location is not stored in backend, keep as empty or local storage
+      status: user.is_verified ? 'Active' : 'Inactive',
+      memberSince,
+    }
+  }
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const user = await getCurrentUserProfile()
+        const profile = mapUserToProfile(user)
+        setProfileData(profile)
+        setDraftProfile(profile)
+      } catch (err: any) {
+        console.error('Error fetching profile:', err)
+        setError(err?.response?.data?.message || err?.message || 'Failed to load profile')
+        // Fallback to localStorage user data if API fails
+        const currentUser = getCurrentUser()
+        if (currentUser) {
+          const profile = mapUserToProfile(currentUser as User)
+          setProfileData(profile)
+          setDraftProfile(profile)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
 
   const startEditing = () => {
     setDraftProfile(profileData)
     setIsEditing(true)
+    setError(null)
+    setSuccessMessage(null)
   }
 
   const cancelEditing = () => {
     setDraftProfile(profileData)
     setIsEditing(false)
+    setError(null)
+    setSuccessMessage(null)
   }
 
-  const handleSave = () => {
-    setProfileData(draftProfile)
-    setIsEditing(false)
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccessMessage(null)
+
+      // Prepare update payload
+      const updatePayload: {
+        firstName?: string
+        lastName?: string
+        email?: string
+        phoneNumber?: string
+      } = {}
+
+      if (draftProfile.firstName !== profileData.firstName) {
+        updatePayload.firstName = draftProfile.firstName
+      }
+      if (draftProfile.lastName !== profileData.lastName) {
+        updatePayload.lastName = draftProfile.lastName
+      }
+      if (draftProfile.email !== profileData.email) {
+        updatePayload.email = draftProfile.email
+      }
+      if (draftProfile.phone !== profileData.phone) {
+        updatePayload.phoneNumber = draftProfile.phone
+      }
+
+      if (Object.keys(updatePayload).length === 0) {
+        setIsEditing(false)
+        return
+      }
+
+      await updateCurrentUserProfile(updatePayload)
+      
+      // Refetch the full profile to get all fields including roleName and created_at
+      const refreshedUser = await getCurrentUserProfile()
+      const updatedProfile = mapUserToProfile(refreshedUser)
+      
+      // Preserve location if it was changed (frontend-only field)
+      updatedProfile.location = draftProfile.location
+
+      // Update localStorage with refreshed user data
+      const stored = localStorage.getItem('adminAuth')
+      if (stored) {
+        const { token } = JSON.parse(stored)
+        setAdminAuthToken(token, refreshedUser)
+      }
+
+      setProfileData(updatedProfile)
+      setDraftProfile(updatedProfile)
+      setIsEditing(false)
+      setSuccessMessage('Profile updated successfully!')
+    } catch (err: any) {
+      console.error('Error updating profile:', err)
+      setError(err?.response?.data?.message || err?.message || 'Failed to update profile')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <PageContainer sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress />
+      </PageContainer>
+    )
   }
 
   return (
     <PageContainer sx={{ p: 4 }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {(error || successMessage) && (
+          <Alert 
+            severity={error ? 'error' : 'success'} 
+            onClose={() => {
+              setError(null)
+              setSuccessMessage(null)
+            }}
+            sx={{ mb: 2 }}
+          >
+            {error || successMessage}
+          </Alert>
+        )}
+        <Box sx={{ width: '100%' }}>
           <Card
             sx={{
               borderRadius: 4,
@@ -134,9 +284,10 @@ function AdminProfile() {
                     <Button 
                       variant="contained" 
                       onClick={handleSave} 
+                      disabled={saving}
                       sx={{ borderRadius: 2, minWidth: 120 }}
                     >
-                      Save changes
+                      {saving ? <CircularProgress size={20} /> : 'Save changes'}
                     </Button>
                     <Button 
                       variant="outlined" 
@@ -170,9 +321,14 @@ function AdminProfile() {
             </Box>
             <Divider sx={{ borderColor: 'rgba(148,163,184,0.2)' }} />
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box 
+          sx={{ 
+            width: { xs: '100%', md: 'calc(50% - 12px)' },
+            alignSelf: { xs: 'stretch', md: 'flex-start' }
+          }}
+        >
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
@@ -187,6 +343,68 @@ function AdminProfile() {
               Contact Information
             </Typography>
             <Stack spacing={2.5}>
+              {isEditing && (
+                <>
+                  <Stack 
+                    direction="row" 
+                    spacing={2} 
+                    alignItems="flex-start"
+                    sx={{ width: '100%' }}
+                  >
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 1.5,
+                        backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        mt: 1,
+                      }}
+                    >
+                      <EditIcon sx={{ fontSize: 22, color: '#8b5cf6' }} />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', gap: 2 }}>
+                      <TextField
+                        label="First Name"
+                        variant="filled"
+                        size="small"
+                        fullWidth
+                        value={draftProfile.firstName}
+                        onChange={(event) =>
+                          setDraftProfile((prev) => ({
+                            ...prev,
+                            firstName: event.target.value,
+                            name: `${event.target.value} ${prev.lastName}`.trim(),
+                          }))
+                        }
+                        sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
+                        InputLabelProps={{ sx: { color: '#cbd5f5' } }}
+                        InputProps={{ sx: { color: '#f8fafc' } }}
+                      />
+                      <TextField
+                        label="Last Name"
+                        variant="filled"
+                        size="small"
+                        fullWidth
+                        value={draftProfile.lastName}
+                        onChange={(event) =>
+                          setDraftProfile((prev) => ({
+                            ...prev,
+                            lastName: event.target.value,
+                            name: `${prev.firstName} ${event.target.value}`.trim(),
+                          }))
+                        }
+                        sx={{ backgroundColor: 'rgba(15,23,42,0.6)', borderRadius: 1 }}
+                        InputLabelProps={{ sx: { color: '#cbd5f5' } }}
+                        InputProps={{ sx: { color: '#f8fafc' } }}
+                      />
+                    </Box>
+                  </Stack>
+                </>
+              )}
               <Stack 
                 direction="row" 
                 spacing={2} 
@@ -214,6 +432,7 @@ function AdminProfile() {
                       variant="filled"
                       size="small"
                       fullWidth
+                      type="email"
                       value={draftProfile.email}
                       onChange={(event) =>
                         setDraftProfile((prev) => ({
@@ -264,6 +483,7 @@ function AdminProfile() {
                       variant="filled"
                       size="small"
                       fullWidth
+                      type="tel"
                       value={draftProfile.phone}
                       onChange={(event) =>
                         setDraftProfile((prev) => ({
@@ -339,9 +559,9 @@ function AdminProfile() {
               </Stack>
             </Stack>
           </Card>
-        </Grid>
+        </Box>
 
-      </Grid>
+      </Box>
     </PageContainer>
   )
 }

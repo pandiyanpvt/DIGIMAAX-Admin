@@ -15,7 +15,8 @@ import {
 } from '@mui/material'
 import { Visibility, VisibilityOff, Email, Lock } from '@mui/icons-material'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginAdmin } from '../../api/auth'
+import { loginAdmin, loginDeveloper } from '../../api/auth'
+import { getCurrentUserRole } from '../../constants/roles'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -36,11 +37,41 @@ export default function Login() {
     }
     setLoading(true)
     try {
-      const { message } = await loginAdmin({ email: email.trim(), password })
+      let loginResult
       
-      setSuccess(message || 'Login successful. Redirecting to dashboard...')
+      // Try admin login first
+      try {
+        loginResult = await loginAdmin({ email: email.trim(), password })
+      } catch (adminError: any) {
+        // If admin login fails with "not an admin" error, try developer login
+        if (adminError?.response?.data?.message?.includes('not an admin') || 
+            adminError?.response?.data?.message?.includes('Invalid credentials or not an admin')) {
+          try {
+            loginResult = await loginDeveloper({ email: email.trim(), password })
+          } catch (devError: any) {
+            // Developer login also failed
+            throw devError
+          }
+        } else {
+          // Other admin login error
+          throw adminError
+        }
+      }
+      
+      setSuccess(loginResult?.message || 'Login successful. Redirecting...')
       setTimeout(() => {
-        navigate('/', { replace: true })
+        const role = getCurrentUserRole()
+
+        // Only admin and developer can access this panel
+        if (role === 'user') {
+          setError('Access denied. This panel is only for administrators and developers.')
+          // Clear auth token
+          localStorage.removeItem('adminAuth')
+          return
+        }
+
+        const dashboardRoute = role === 'superadmin' ? '/developer-dashboard' : '/admin-dashboard'
+        navigate(dashboardRoute, { replace: true })
         // Trigger dashboard view in AdminLayout
         window.dispatchEvent(new CustomEvent('admin:navigate', { detail: 'dashboard' }))
       }, 800)

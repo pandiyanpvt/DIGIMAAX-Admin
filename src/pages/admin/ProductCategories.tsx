@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Typography,
@@ -19,6 +19,8 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  CircularProgress,
+  Alert,
 } from '@mui/material'
 import {
   Edit as EditIcon,
@@ -27,95 +29,181 @@ import {
   Category as CategoryIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import {
+  getAllCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  type ProductCategory,
+} from '../../api/categories'
 
-const sampleCategories = [
-  {
-    id: 1,
-    name: 'Electronics',
-    description: 'Electronic products and devices',
-    slug: 'electronics',
-    isActive: true,
-    productCount: 25,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: 'Clothing',
-    description: 'Apparel and fashion items',
-    slug: 'clothing',
-    isActive: true,
-    productCount: 18,
-    createdAt: '2024-01-14',
-  },
-  {
-    id: 3,
-    name: 'Home & Garden',
-    description: 'Home improvement and garden supplies',
-    slug: 'home-garden',
-    isActive: false,
-    productCount: 12,
-    createdAt: '2024-01-13',
-  },
-]
+// Frontend display interface (includes computed fields)
+interface CategoryDisplay {
+  id: number
+  name: string
+  description?: string // Frontend-only, not saved to backend
+  slug: string // Auto-generated from name, frontend-only
+  isActive: boolean
+  productCount: number
+  createdAt: string
+}
+
+// Map backend data to frontend display format
+const mapBackendToFrontend = (backendCategory: ProductCategory): CategoryDisplay => ({
+  id: backendCategory.id,
+  name: backendCategory.name,
+  description: '', // Not in backend, keep empty
+  slug: backendCategory.name.toLowerCase().replace(/\s+/g, '-'), // Auto-generate from name
+  isActive: backendCategory.is_active ?? true,
+  productCount: backendCategory.product_count ?? 0,
+  createdAt: backendCategory.created_at ? new Date(backendCategory.created_at).toISOString().split('T')[0] : '',
+})
 
 function ProductCategories() {
-  const [categories, setCategories] = useState(sampleCategories)
-  const [selectedCategory, setSelectedCategory] = useState<any>(null)
+  const [categories, setCategories] = useState<CategoryDisplay[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<CategoryDisplay | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Fetch categories from backend on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const backendCategories = await getAllCategories()
+        const mappedCategories = backendCategories.map(mapBackendToFrontend)
+        setCategories(mappedCategories)
+      } catch (err: any) {
+        console.error('Error fetching categories:', err)
+        setError(err?.response?.data?.error?.message || err?.message || 'Failed to load categories')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   const filteredCategories = categories.filter(
     (c) =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchTerm.toLowerCase())
+      (c.description && c.description.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
   const handleAdd = () => {
     setSelectedCategory({
+      id: 0, // Temporary ID for new category
       name: '',
       description: '',
       slug: '',
       isActive: true,
+      productCount: 0,
+      createdAt: '',
     })
     setAddDialogOpen(true)
+    setError(null)
+    setSuccessMessage(null)
   }
 
-  const handleEdit = (category: any) => {
+  const handleEdit = (category: CategoryDisplay) => {
     setSelectedCategory({ ...category })
     setEditDialogOpen(true)
+    setError(null)
+    setSuccessMessage(null)
   }
 
-  const handleSave = () => {
-    if (selectedCategory) {
-      if (selectedCategory.id) {
-        setCategories(
-          categories.map((c) => (c.id === selectedCategory.id ? selectedCategory : c))
-        )
+  const handleSave = async () => {
+    if (!selectedCategory) return
+
+    // Validate
+    if (!selectedCategory.name.trim()) {
+      setError('Category name is required')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccessMessage(null)
+
+      if (selectedCategory.id && selectedCategory.id > 0) {
+        // Update existing category
+        const updated = await updateCategory({
+          id: selectedCategory.id,
+          name: selectedCategory.name,
+          is_active: selectedCategory.isActive,
+        })
+        const updatedCategory = mapBackendToFrontend(updated)
+        // Preserve description (frontend-only)
+        updatedCategory.description = selectedCategory.description
+        setCategories(categories.map((c) => (c.id === selectedCategory.id ? updatedCategory : c)))
         setEditDialogOpen(false)
+        setSuccessMessage('Category updated successfully!')
       } else {
-        const newCategory = {
-          ...selectedCategory,
-          id: Date.now(),
-          productCount: 0,
-          createdAt: new Date().toISOString().split('T')[0],
-          slug: selectedCategory.slug || selectedCategory.name.toLowerCase().replace(/\s+/g, '-'),
-        }
+        // Create new category
+        const created = await createCategory({
+          name: selectedCategory.name,
+          is_active: selectedCategory.isActive,
+        })
+        const newCategory = mapBackendToFrontend(created)
+        // Preserve description (frontend-only)
+        newCategory.description = selectedCategory.description
         setCategories([...categories, newCategory])
         setAddDialogOpen(false)
+        setSuccessMessage('Category created successfully!')
       }
       setSelectedCategory(null)
+    } catch (err: any) {
+      console.error('Error saving category:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to save category')
+    } finally {
+      setSaving(false)
     }
   }
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) {
+      return
+    }
+
+    try {
+      setError(null)
+      await deleteCategory(id)
       setCategories(categories.filter((c) => c.id !== id))
+      setSuccessMessage('Category deleted successfully!')
+    } catch (err: any) {
+      console.error('Error deleting category:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete category')
     }
   }
 
-  const handleToggleActive = (id: number) => {
-    setCategories(categories.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c)))
+  const handleToggleActive = async (id: number) => {
+    const category = categories.find((c) => c.id === id)
+    if (!category) return
+
+    const updatedCategory = { ...category, isActive: !category.isActive }
+    try {
+      setError(null)
+      const updated = await updateCategory({
+        id,
+        is_active: updatedCategory.isActive,
+      })
+      const mappedUpdated = mapBackendToFrontend(updated)
+      // Preserve description (frontend-only)
+      mappedUpdated.description = category.description
+      setCategories(categories.map((c) => (c.id === id ? mappedUpdated : c)))
+    } catch (err: any) {
+      console.error('Error toggling category status:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to update category status')
+      // Revert on error
+      setCategories(categories.map((c) => (c.id === id ? category : c)))
+    }
   }
 
   return (
@@ -129,11 +217,25 @@ function ProductCategories() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleAdd}
+            disabled={loading}
             sx={{ backgroundColor: 'primary.main' }}
           >
             Add Category
           </Button>
         </Box>
+
+        {(error || successMessage) && (
+          <Alert
+            severity={error ? 'error' : 'success'}
+            onClose={() => {
+              setError(null)
+              setSuccessMessage(null)
+            }}
+            sx={{ mb: 2 }}
+          >
+            {error || successMessage}
+          </Alert>
+        )}
 
         <TextField
           placeholder="Search categories..."
@@ -141,9 +243,21 @@ function ProductCategories() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ mb: 3, minWidth: 300 }}
+          disabled={loading}
         />
 
-        <TableContainer>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+            <CircularProgress />
+          </Box>
+        ) : filteredCategories.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="body1" color="text.secondary">
+              {searchTerm ? 'No categories found matching your search.' : 'No categories found. Click "Add Category" to create one.'}
+            </Typography>
+          </Box>
+        ) : (
+          <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
@@ -211,6 +325,7 @@ function ProductCategories() {
             </TableBody>
           </Table>
         </TableContainer>
+        )}
       </Card>
 
       {/* Add/Edit Dialog */}
@@ -234,27 +349,34 @@ function ProductCategories() {
                 fullWidth
                 label="Category Name"
                 value={selectedCategory.name}
-                onChange={(e) => setSelectedCategory({ ...selectedCategory, name: e.target.value })}
+                onChange={(e) => {
+                  const newName = e.target.value
+                  const newSlug = newName.toLowerCase().replace(/\s+/g, '-')
+                  setSelectedCategory({ ...selectedCategory, name: newName, slug: newSlug })
+                }}
                 sx={{ mb: 2 }}
+                required
               />
               <TextField
                 fullWidth
-                label="Description"
-                value={selectedCategory.description}
+                label="Description (optional, frontend-only)"
+                value={selectedCategory.description || ''}
                 onChange={(e) =>
                   setSelectedCategory({ ...selectedCategory, description: e.target.value })
                 }
                 multiline
                 rows={3}
                 sx={{ mb: 2 }}
+                helperText="Description is for frontend display only and is not saved to backend."
               />
               <TextField
                 fullWidth
-                label="Slug"
-                value={selectedCategory.slug}
+                label="Slug (auto-generated)"
+                value={selectedCategory.slug || selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}
                 onChange={(e) => setSelectedCategory({ ...selectedCategory, slug: e.target.value })}
                 placeholder="auto-generated-from-name"
                 sx={{ mb: 2 }}
+                helperText="Slug is auto-generated from name. This is for display only and not saved to backend."
               />
               <FormControlLabel
                 control={
@@ -280,8 +402,13 @@ function ProductCategories() {
           >
             Cancel
           </Button>
-          <Button onClick={handleSave} variant="contained" sx={{ backgroundColor: 'primary.main' }}>
-            Save
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={saving}
+            sx={{ backgroundColor: 'primary.main' }}
+          >
+            {saving ? <CircularProgress size={20} /> : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -290,4 +417,5 @@ function ProductCategories() {
 }
 
 export default ProductCategories
+
 

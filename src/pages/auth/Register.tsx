@@ -1,16 +1,44 @@
-import { useState } from 'react'
-import { Alert, Box, Button, Container, Paper, TextField, Typography, Link as MuiLink } from '@mui/material'
+import { useState, useEffect } from 'react'
+import { Alert, Box, Button, Container, Paper, TextField, Typography, Link as MuiLink, MenuItem, Select, FormControl, InputLabel } from '@mui/material'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerAdmin } from '../../api/auth'
+import { getAllUserRoles, type UserRole } from '../../api/userRoles'
 
 export default function Register() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    email: '', 
+    phoneNumber: '', 
+    password: '', 
+    confirmPassword: '',
+    userRoleId: 1 // Default to Admin role (ID 1)
+  })
+  const [userRoles, setUserRoles] = useState<UserRole[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingRoles, setLoadingRoles] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const handleChange = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    // Try to fetch user roles, but don't fail if it requires auth
+    const fetchRoles = async () => {
+      setLoadingRoles(true)
+      try {
+        const roles = await getAllUserRoles()
+        setUserRoles(roles.filter(role => role.is_active))
+      } catch (err) {
+        // If fetching roles fails (e.g., requires auth), use default
+        console.warn('Could not fetch user roles, using default')
+      } finally {
+        setLoadingRoles(false)
+      }
+    }
+    fetchRoles()
+  }, [])
+
+  const handleChange = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: any } }) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
@@ -19,7 +47,7 @@ export default function Register() {
     setError('')
     setSuccess('')
 
-    if (!form.name.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.phoneNumber.trim() || !form.password || !form.confirmPassword) {
       setError('All fields are required.')
       return
     }
@@ -27,16 +55,34 @@ export default function Register() {
       setError('Please enter a valid email.')
       return
     }
+    if (!/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/.test(form.phoneNumber.trim())) {
+      setError('Please enter a valid phone number.')
+      return
+    }
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match.')
+      return
+    }
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters long.')
       return
     }
 
     setLoading(true)
     try {
-      const message = await registerAdmin({ name: form.name.trim(), email: form.email.trim(), password: form.password })
-      setSuccess(message)
-      setTimeout(() => navigate('/login', { replace: true }), 1200)
+      const message = await registerAdmin({ 
+        firstName: form.firstName.trim(), 
+        lastName: form.lastName.trim(),
+        email: form.email.trim(), 
+        phoneNumber: form.phoneNumber.trim(),
+        password: form.password,
+        userRoleId: form.userRoleId
+      })
+      setSuccess(message || 'Registration successful. Please check your email for verification OTP.')
+      setTimeout(() => navigate('/verify-email', { 
+        replace: true,
+        state: { email: form.email.trim() }
+      }), 2000)
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Registration failed.')
     } finally {
@@ -170,37 +216,70 @@ export default function Register() {
             </Alert>
           )}
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Full Name"
-              value={form.name}
-              onChange={handleChange('name')}
-              required
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: 'white',
-                  bgcolor: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: 2,
-                  '& fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="First Name"
+                value={form.firstName}
+                onChange={handleChange('firstName')}
+                required
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.35)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'rgba(102, 126, 234, 0.8)',
+                      borderWidth: '2px',
+                    },
                   },
-                  '&:hover fieldset': {
-                    borderColor: 'rgba(255, 255, 255, 0.35)',
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&.Mui-focused': {
+                      color: 'rgba(102, 126, 234, 0.9)',
+                    },
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'rgba(102, 126, 234, 0.8)',
-                    borderWidth: '2px',
+                }}
+              />
+              <TextField
+                label="Last Name"
+                value={form.lastName}
+                onChange={handleChange('lastName')}
+                required
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.35)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'rgba(102, 126, 234, 0.8)',
+                      borderWidth: '2px',
+                    },
                   },
-                },
-                '& .MuiInputLabel-root': {
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  '&.Mui-focused': {
-                    color: 'rgba(102, 126, 234, 0.9)',
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&.Mui-focused': {
+                      color: 'rgba(102, 126, 234, 0.9)',
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </Box>
             <TextField
               label="Email"
               type="email"
@@ -233,6 +312,82 @@ export default function Register() {
                 },
               }}
             />
+            <TextField
+              label="Phone Number"
+              type="tel"
+              value={form.phoneNumber}
+              onChange={handleChange('phoneNumber')}
+              required
+              fullWidth
+              placeholder="+1234567890"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  '& fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'rgba(255, 255, 255, 0.35)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'rgba(102, 126, 234, 0.8)',
+                    borderWidth: '2px',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-focused': {
+                    color: 'rgba(102, 126, 234, 0.9)',
+                  },
+                },
+              }}
+            />
+            {userRoles.length > 0 && (
+              <FormControl
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    bgcolor: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.35)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'rgba(102, 126, 234, 0.8)',
+                      borderWidth: '2px',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    '&.Mui-focused': {
+                      color: 'rgba(102, 126, 234, 0.9)',
+                    },
+                  },
+                }}
+              >
+                <InputLabel>User Role</InputLabel>
+                <Select
+                  value={form.userRoleId}
+                  onChange={(e) => handleChange('userRoleId')({ target: { value: Number(e.target.value) } })}
+                  label="User Role"
+                  disabled={loadingRoles}
+                >
+                  {userRoles.map((role) => (
+                    <MenuItem key={role.id} value={role.id}>
+                      {role.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
             <TextField
               label="Password"
               type="password"

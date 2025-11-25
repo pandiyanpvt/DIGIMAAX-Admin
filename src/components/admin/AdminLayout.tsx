@@ -24,15 +24,36 @@ import {
   UserRoleManagement,
   CartDetails,
 } from '../../pages/admin'
-import { UserDashboard, MyBookings, UserProfile } from '../../pages/user'
-import { useNavigate } from 'react-router-dom'
+import { DeveloperDashboard } from '../../pages/developer'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { getCurrentUserRole, rolePermissions } from '../../constants/roles'
 
 function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [selectedMenu, setSelectedMenu] = useState('dashboard')
   const userRole = getCurrentUserRole()
   const permissions = rolePermissions[userRole]
+
+  // Sync selectedMenu with URL path
+  useEffect(() => {
+    const path = location.pathname
+    // Remove leading slash and use as menu ID
+    // Handle dashboard routes (admin-dashboard, developer-dashboard, super-admin-dashboard, dashboard)
+    const menuId = path === '/' || 
+                   path === '/dashboard' || 
+                   path === '/admin-dashboard' || 
+                   path === '/developer-dashboard' ||
+                   path === '/super-admin-dashboard' 
+                   ? 'dashboard' 
+                   : path.slice(1)
+    setSelectedMenu(menuId)
+    
+    // Handle logout navigation
+    if (menuId === 'logout') {
+      navigate('/logout', { replace: true })
+    }
+  }, [location.pathname, navigate])
 
   // Page title mapping
   const getPageTitle = (menuId: string): string => {
@@ -49,6 +70,15 @@ function AdminLayout() {
       users: 'Users Management',
       'user-roles': 'User Role Management',
       'cart-details': 'Cart Details',
+      admins: 'Admins Management',
+      bookings: 'Bookings Management',
+      'my-bookings': 'My Bookings',
+      customers: 'Customers Management',
+      services: 'Services Management',
+      promotions: 'Promotions Management',
+      reports: 'Reports & Analytics',
+      'audit-logs': 'Audit Logs',
+      settings: 'System Settings',
       profile: 'Profile',
     }
     return titles[menuId] || 'Dashboard'
@@ -57,8 +87,8 @@ function AdminLayout() {
   const renderContent = () => {
     switch (selectedMenu) {
       case 'dashboard':
-        if (userRole === 'user') {
-          return <UserDashboard />
+        if (userRole === 'superadmin') {
+          return <DeveloperDashboard />
         }
         return <AdminDashboard />
       // Admin View Pages
@@ -91,7 +121,7 @@ function AdminLayout() {
       case 'bookings':
         return <BookingsManagement />
       case 'my-bookings':
-        return <MyBookings />
+        return <BookingsManagement />
       case 'customers':
         return <CustomersManagement />
       case 'services':
@@ -105,31 +135,59 @@ function AdminLayout() {
       case 'settings':
         return <SystemSettings />
       case 'profile':
-        if (userRole === 'user') {
-          return <UserProfile />
-        }
         return <AdminProfile />
       case 'logout':
-        navigate('/logout', { replace: true })
+        // Don't navigate during render - handle in useEffect
         return null
       default:
-        if (userRole === 'user') {
-          return <UserDashboard />
-        }
         return <AdminDashboard />
     }
   }
 
+  // Handle custom navigation events
   useEffect(() => {
     const handler = (event: Event) => {
       const customEvent = event as CustomEvent<string>
-      setSelectedMenu(customEvent.detail)
+      const menuId = customEvent.detail
+      setSelectedMenu(menuId)
+      // Navigate to the corresponding route
+      if (menuId === 'dashboard' || menuId === '/') {
+        // Navigate to the appropriate dashboard based on role
+        if (userRole === 'superadmin') {
+          navigate('/developer-dashboard')
+        } else if (userRole === 'admin') {
+          navigate('/admin-dashboard')
+        } else {
+          navigate('/dashboard')
+        }
+      } else if (menuId !== 'logout') {
+        navigate(`/${menuId}`)
+      }
     }
     window.addEventListener('admin:navigate', handler as EventListener)
     return () => {
       window.removeEventListener('admin:navigate', handler as EventListener)
     }
-  }, [])
+  }, [navigate, userRole])
+
+  // Update menu selection handler to navigate
+  const handleMenuChange = (menuId: string) => {
+    setSelectedMenu(menuId)
+    if (menuId === 'dashboard' || menuId === '/') {
+      // Navigate to the appropriate dashboard based on role
+      if (userRole === 'superadmin') {
+        navigate('/developer-dashboard')
+      } else if (userRole === 'admin') {
+        navigate('/admin-dashboard')
+      } else {
+        navigate('/dashboard')
+      }
+    } else if (menuId === 'logout') {
+      navigate('/logout')
+    } else {
+      navigate(`/${menuId}`)
+    }
+  }
 
   return (
     <Box 
@@ -152,7 +210,7 @@ function AdminLayout() {
     >
       <AdminSidebar 
         selectedMenu={selectedMenu} 
-        onMenuChange={setSelectedMenu}
+        onMenuChange={handleMenuChange}
         visibleMenuIds={permissions.navigation}
       />
       <Box
@@ -168,7 +226,7 @@ function AdminLayout() {
       >
         <AdminHeaderBar 
           pageTitle={getPageTitle(selectedMenu)} 
-          onMenuChange={setSelectedMenu}
+          onMenuChange={handleMenuChange}
           canAccessSettings={permissions.canAccessSettings}
         />
         <Box
