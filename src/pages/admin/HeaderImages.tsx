@@ -10,9 +10,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  ImageList,
-  ImageListItem,
-  ImageListItemBar,
   CircularProgress,
   Alert,
   Snackbar,
@@ -31,8 +28,9 @@ import {
   createHeaderImage,
   updateHeaderImage,
   deleteHeaderImage,
-  uploadHeaderImage,
   type HeaderImage,
+  type CreateHeaderImagePayload,
+  type UpdateHeaderImagePayload,
 } from '../../api/headerImages'
 
 interface DisplayHeaderImage {
@@ -53,6 +51,8 @@ function HeaderImages() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Fetch header images from backend
   useEffect(() => {
@@ -71,7 +71,7 @@ function HeaderImages() {
     }
 
     fetchImages()
-  }, [])
+  }, [refreshKey])
 
   const handleAdd = () => {
     const maxOrder = images.length > 0 ? Math.max(...images.map((img) => img.order_no)) : 0
@@ -99,43 +99,47 @@ function HeaderImages() {
   const handleSave = async () => {
     if (!selectedImage) return
 
+    // For new images, require file
+    if (!selectedImage.id && !selectedFile) {
+      setError('Please select an image')
+      return
+    }
+
     try {
       setUploading(true)
       setError(null)
 
       if (selectedImage.id) {
         // Update existing image
-        const payload: any = {
+        const payload: UpdateHeaderImagePayload = {
           id: selectedImage.id,
           order_no: selectedImage.order,
           is_active: selectedImage.isActive,
         }
 
-        if (selectedImage.imageUrl) {
-          payload.img_url = selectedImage.imageUrl
+        if (selectedFile) {
+          payload.image = selectedFile
         }
 
-        const updated = await updateHeaderImage(payload)
-        setImages(images.map((img) => (img.id === updated.id ? updated : img)))
+        await updateHeaderImage(payload)
         setSuccessMessage('Header image updated successfully')
         setEditDialogOpen(false)
+        setRefreshKey((k) => k + 1)
       } else {
-        // Create new image
-        const payload: any = {
+        // Create new image - file is required
+        const payload: CreateHeaderImagePayload = {
+          image: selectedFile!,
           order_no: selectedImage.order,
           is_active: selectedImage.isActive,
         }
 
-        if (selectedImage.imageUrl) {
-          payload.img_url = selectedImage.imageUrl
-        }
-
-        const created = await createHeaderImage(payload)
-        setImages([...images, created])
+        await createHeaderImage(payload)
         setSuccessMessage('Header image created successfully')
         setAddDialogOpen(false)
+        setRefreshKey((k) => k + 1)
       }
       setSelectedImage(null)
+      setSelectedFile(null)
     } catch (err: any) {
       console.error('Error saving header image:', err)
       setError(err?.response?.data?.message || 'Failed to save header image')
@@ -160,24 +164,16 @@ function HeaderImages() {
     }
   }
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    try {
-      setUploading(true)
-      setError(null)
-      const result = await uploadHeaderImage(file)
-      if (selectedImage) {
-        setSelectedImage({ ...selectedImage, imageUrl: result.url })
-      }
-      setSuccessMessage('Image uploaded successfully')
-    } catch (err: any) {
-      console.error('Error uploading image:', err)
-      setError(err?.response?.data?.message || 'Failed to upload image')
-    } finally {
-      setUploading(false)
+    setSelectedFile(file)
+    const previewUrl = URL.createObjectURL(file)
+    if (selectedImage) {
+      setSelectedImage({ ...selectedImage, imageUrl: previewUrl })
     }
+    setSuccessMessage('Image selected successfully')
   }
 
   return (
@@ -212,50 +208,83 @@ function HeaderImages() {
             </Typography>
           </Box>
         ) : (
-          <ImageList 
-            cols={{ xs: 1, sm: 2, md: 3 }} 
-            gap={{ xs: 8, sm: 12, md: 16 }}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+              gap: 3,
+              width: '100%',
+            }}
           >
             {images.map((image) => (
-              <ImageListItem key={image.id}>
-                <Box
-                  component="img"
-                  src={image.img_url}
-                  alt={`Header Image ${image.order_no}`}
+              <Box key={image.id}>
+                <Card
                   sx={{
-                    width: '100%',
-                    height: 200,
-                    objectFit: 'cover',
+                    position: 'relative',
                     borderRadius: 2,
+                    overflow: 'hidden',
+                    '&:hover': {
+                      boxShadow: 4,
+                    },
                   }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.src = '/placeholder-image.png'
-                  }}
-                />
-                <ImageListItemBar
-                  title={`Order: ${image.order_no}`}
-                  subtitle={image.is_active ? 'Active' : 'Inactive'}
-                  actionIcon={
+                >
+                  <Box
+                    component="img"
+                    src={image.img_url}
+                    alt={`Header Image ${image.order_no}`}
+                    sx={{
+                      width: '100%',
+                      height: 225,
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = '/placeholder-image.png'
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)',
+                      p: 1.5,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>
+                        Order: {image.order_no}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                        {image.is_active ? 'Active' : 'Inactive'}
+                      </Typography>
+                    </Box>
                     <Box>
                       <IconButton
-                        sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                        size="small"
+                        sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
                         onClick={() => handleEdit(image)}
                       >
                         <EditIcon />
                       </IconButton>
                       <IconButton
-                        sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                        size="small"
+                        sx={{ color: 'rgba(255, 255, 255, 0.9)' }}
                         onClick={() => handleDelete(image.id)}
                       >
                         <DeleteIcon />
                       </IconButton>
                     </Box>
-                  }
-                />
-              </ImageListItem>
+                  </Box>
+                </Card>
+              </Box>
             ))}
-          </ImageList>
+          </Box>
         )}
       </Card>
 
@@ -279,15 +308,6 @@ function HeaderImages() {
         <DialogContent>
           {selectedImage && (
             <Box sx={{ mt: 2 }}>
-              <TextField
-                fullWidth
-                label="Image URL"
-                value={selectedImage.imageUrl}
-                onChange={(e) => setSelectedImage({ ...selectedImage, imageUrl: e.target.value })}
-                placeholder="Enter image URL or upload a file"
-                sx={{ mb: 2 }}
-                disabled={uploading}
-              />
               <Button
                 variant="outlined"
                 component="label"
@@ -296,7 +316,7 @@ function HeaderImages() {
                 sx={{ mb: 2 }}
                 disabled={uploading}
               >
-                {uploading ? 'Uploading...' : 'Upload Image'}
+                {uploading ? 'Uploading...' : selectedImage.id ? 'Change Image' : 'Upload Image *'}
                 <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
               </Button>
               {selectedImage.imageUrl && (

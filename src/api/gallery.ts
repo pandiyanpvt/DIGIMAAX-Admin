@@ -11,8 +11,7 @@ export interface GalleryImage {
 }
 
 export interface CreateGalleryPayload {
-  image?: File
-  img_url?: string
+  image: File
   name: string
   description?: string
   is_active?: boolean
@@ -21,7 +20,6 @@ export interface CreateGalleryPayload {
 export interface UpdateGalleryPayload {
   id: number
   image?: File
-  img_url?: string
   name?: string
   description?: string
   is_active?: boolean
@@ -55,19 +53,15 @@ export async function getGalleryImageById(id: number): Promise<GalleryImage> {
 export async function createGalleryImage(payload: CreateGalleryPayload): Promise<GalleryImage> {
   try {
     const formData = new FormData()
-    if (payload.image) {
-      formData.append('image', payload.image)
-    }
-    if (payload.img_url) {
-      formData.append('img_url', payload.img_url)
-    }
+    formData.append('image', payload.image)
     formData.append('name', payload.name)
     if (payload.description) formData.append('description', payload.description)
-    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active.toString())
+    formData.append('is_active', payload.is_active ? 'true' : 'false')
 
+    // Must set Content-Type to undefined to let browser set it with boundary for FormData
     const { data } = await apiClient.post('/api/gallery/save', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { message, galleryItem }
@@ -83,14 +77,14 @@ export async function updateGalleryImage(payload: UpdateGalleryPayload): Promise
   try {
     const formData = new FormData()
     if (payload.image) formData.append('image', payload.image)
-    if (payload.img_url !== undefined) formData.append('img_url', payload.img_url)
     if (payload.name !== undefined) formData.append('name', payload.name)
     if (payload.description !== undefined) formData.append('description', payload.description)
-    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active.toString())
+    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active ? 'true' : 'false')
 
+    // Must set Content-Type to undefined to let browser set it with boundary for FormData
     const { data } = await apiClient.put(`/api/gallery/update/${payload.id}`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { message, galleryItem }

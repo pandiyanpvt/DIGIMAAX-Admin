@@ -66,7 +66,7 @@ const sampleBookings = [
     date: '2024-01-15',
     status: 'confirmed',
     paymentStatus: 'pending',
-    quotedAmount: 'LKR 75,000',
+    quotedAmount: '€75,000',
     notes: 'Customer prefers morning installation',
   },
   {
@@ -94,7 +94,7 @@ const sampleBookings = [
     date: '2024-01-14',
     status: 'quoted',
     paymentStatus: 'pending',
-    quotedAmount: 'LKR 150,000',
+    quotedAmount: '€150,000',
     notes: 'Follow up required',
   },
 ]
@@ -849,7 +849,7 @@ DIGIMAAX Team`,
                   onChange={(e) =>
                     setSelectedBooking({ ...selectedBooking, quotedAmount: e.target.value })
                   }
-                  placeholder="e.g., LKR 75,000"
+                  placeholder="e.g., €75,000"
                   sx={{ 
                     mb: 2,
                     '& .MuiOutlinedInput-root': {

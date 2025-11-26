@@ -7,7 +7,7 @@ import {
 } from '@mui/material'
 import { motion } from 'framer-motion'
 import {
-  Settings as SettingsIcon,
+  Person as PersonIcon,
   Menu as MenuIcon,
 } from '@mui/icons-material'
 
@@ -74,11 +74,11 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
 
       {/* Right Section */}
       <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-        {/* Settings */}
+        {/* User Profile */}
         {canAccessSettings && (
           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
             <IconButton
-              onClick={() => onMenuChange?.('settings')}
+              onClick={() => onMenuChange?.('profile')}
               sx={{
                 color: '#34d399',
                 backgroundColor: 'rgba(16, 185, 129, 0.15)',
@@ -91,7 +91,7 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
                 },
               }}
             >
-              <SettingsIcon />
+              <PersonIcon />
             </IconButton>
           </motion.div>
         )}

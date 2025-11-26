@@ -14,7 +14,7 @@ import {
   TrendingUp as TopServicesIcon,
   ShoppingCart as OrdersIcon,
 } from '@mui/icons-material'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 import PageContainer from '../../components/common/PageContainer'
 import { getSalesSummary, getSalesGraph, type SalesSummary, type SalesGraphData } from '../../api/analytics'
@@ -38,18 +38,6 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Helper to check if message is read
-  const isRead = (id: number) => {
-    try {
-      const stored = localStorage.getItem('readContactMessages')
-      if (!stored) return false
-      const readIds = JSON.parse(stored)
-      return Array.isArray(readIds) && readIds.includes(id)
-    } catch {
-      return false
-    }
-  }
-
   // Fetch analytics data and unread messages from backend
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -64,9 +52,13 @@ function AdminDashboard() {
         setSalesSummary(summary)
         setSalesGraph(graph)
         
-        // Filter unread messages
-        const unread = messages.filter((msg) => !isRead(msg.id))
-        setUnreadMessages(unread.slice(0, 5)) // Show only latest 5 unread messages
+        // Filter unread messages using backend is_read field (0 = unread, 1 = read)
+        const unread = messages.filter((msg) => msg.is_read === 0 || msg.is_read === undefined)
+        // Sort by created_at (newest first) and show only latest 5 unread messages
+        const sortedUnread = unread.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        setUnreadMessages(sortedUnread.slice(0, 5))
       } catch (err: any) {
         console.error('Error fetching dashboard data:', err)
         setError(err?.response?.data?.error?.message || err?.message || 'Failed to load dashboard data')
@@ -78,14 +70,14 @@ function AdminDashboard() {
     fetchDashboardData()
   }, [])
 
-  // Format LKR currency with better formatting
-  const formatLKR = (amount: number) => {
+  // Format EUR currency with better formatting
+  const formatEUR = (amount: number) => {
     if (amount >= 1000000) {
-      return `LKR ${(amount / 1000000).toFixed(1)}M`
+      return `€${(amount / 1000000).toFixed(1)}M`
     } else if (amount >= 1000) {
-      return `LKR ${(amount / 1000).toFixed(0)}K`
+      return `€${(amount / 1000).toFixed(0)}K`
     }
-    return `LKR ${amount.toLocaleString()}`
+    return `€${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   // Format sales graph data for chart
@@ -144,7 +136,7 @@ function AdminDashboard() {
     return [
       {
         title: 'Daily Sales',
-        value: formatLKR(salesSummary.daily.totalSales),
+        value: formatEUR(salesSummary.daily.totalSales),
         change: formatPercentChange(salesSummary.daily.salesPercentageChangeFromYesterday),
         changeValue: salesSummary.daily.salesPercentageChangeFromYesterday,
         icon: <RevenueIcon />,
@@ -160,7 +152,7 @@ function AdminDashboard() {
       },
       {
         title: 'Monthly Sales',
-        value: formatLKR(salesSummary.monthly.totalSales),
+        value: formatEUR(salesSummary.monthly.totalSales),
         change: formatPercentChange(salesSummary.monthly.salesPercentageChangeFromLastMonth),
         changeValue: salesSummary.monthly.salesPercentageChangeFromLastMonth,
         icon: <TopServicesIcon />,
@@ -328,7 +320,7 @@ function AdminDashboard() {
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#e2e8f0' }}>
               Sales Trend (Last 30 Days)
             </Typography>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={350}>
               <LineChart data={salesGraphData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.12)" />
                 <XAxis 
@@ -341,7 +333,7 @@ function AdminDashboard() {
                 />
                 <YAxis 
                   stroke="#94a3b8"
-                  tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}K`}
+                  tickFormatter={(value) => `€${(value / 1000).toFixed(0)}K`}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -353,8 +345,8 @@ function AdminDashboard() {
                   }}
                   formatter={(value: any) => {
                     const formatted = value >= 1000000 
-                      ? `LKR ${(value / 1000000).toFixed(1)}M`
-                      : `LKR ${(value / 1000).toFixed(0)}K`
+                      ? `€${(value / 1000000).toFixed(1)}M`
+                      : `€${(value / 1000).toFixed(0)}K`
                     return [formatted, 'Sales']
                   }}
                   labelStyle={{ color: '#cbd5f5', marginBottom: '4px' }}
@@ -372,74 +364,26 @@ function AdminDashboard() {
             </ResponsiveContainer>
           </Card>
 
-          {/* Monthly Sales Chart */}
-          <Card sx={{ 
-            p: 2, 
-            borderRadius: 3, 
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(236, 72, 153, 0.15)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-          }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#e2e8f0' }}>
-              Daily Sales (LKR)
-            </Typography>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={salesGraphData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.12)" />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#94a3b8"
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  interval="preserveStartEnd"
-                />
-                <YAxis 
-                  stroke="#94a3b8" 
-                  tickFormatter={(value) => `LKR ${(value / 1000).toFixed(0)}K`}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    border: '1px solid rgba(244, 114, 182, 0.3)',
-                    borderRadius: 8,
-                    color: '#f8fafc',
-                    padding: '8px 12px',
-                  }}
-                  formatter={(value: any) => {
-                    const formatted = value >= 1000000 
-                      ? `LKR ${(value / 1000000).toFixed(1)}M`
-                      : `LKR ${(value / 1000).toFixed(0)}K`
-                    return [formatted, 'Sales']
-                  }}
-                  labelStyle={{ color: '#cbd5f5', marginBottom: '4px' }}
-                />
-                <Bar dataKey="amount" fill="#764ba2" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Box>
-
-        {/* Unread Messages Section */}
-        {unreadMessages.length > 0 && (
-          <Box sx={{ mt: 3 }}>
-            <Card
-              sx={{
-                p: 2,
-                borderRadius: 3,
-                backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                backdropFilter: 'blur(18px)',
-                WebkitBackdropFilter: 'blur(18px)',
-                border: '1px solid rgba(236, 72, 153, 0.15)',
-                boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#e2e8f0' }}>
-                  Unread Messages ({unreadMessages.length})
-                </Typography>
+          {/* Unread Messages Section */}
+          <Card
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(18px)',
+              WebkitBackdropFilter: 'blur(18px)',
+              border: '1px solid rgba(236, 72, 153, 0.15)',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 350,
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#e2e8f0' }}>
+                Unread Contact Messages {unreadMessages.length > 0 && `(${unreadMessages.length})`}
+              </Typography>
+              {unreadMessages.length > 0 && (
                 <Box
                   onClick={() => navigate('/contact-messages')}
                   sx={{
@@ -460,8 +404,10 @@ function AdminDashboard() {
                   </Typography>
                   <ArrowForwardIcon fontSize="small" />
                 </Box>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              )}
+            </Box>
+            {unreadMessages.length > 0 ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, overflowY: 'auto' }}>
                 {unreadMessages.map((message, index) => (
                   <motion.div
                     key={message.id}
@@ -550,9 +496,15 @@ function AdminDashboard() {
                   </motion.div>
                 ))}
               </Box>
-            </Card>
-          </Box>
-        )}
+            ) : (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 300 }}>
+                <Typography variant="body2" sx={{ color: '#94a3b8', textAlign: 'center' }}>
+                  No unread messages
+                </Typography>
+              </Box>
+            )}
+          </Card>
+        </Box>
 
       </Card>
     </PageContainer>

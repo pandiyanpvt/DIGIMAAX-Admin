@@ -21,6 +21,7 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Divider,
 } from '@mui/material'
 import {
   Delete as DeleteIcon,
@@ -36,6 +37,7 @@ import {
   getContactMessageById,
   deleteContactMessage,
   replyToContact,
+  markContactAsRead,
   type ContactMessage,
   type ContactReply,
 } from '../../api/contact'
@@ -46,7 +48,6 @@ interface DisplayMessage extends ContactMessage {
 
 function ContactMessages() {
   const [messages, setMessages] = useState<ContactMessage[]>([])
-  const [readMessages, setReadMessages] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -56,6 +57,7 @@ function ContactMessages() {
   const [replySubject, setReplySubject] = useState('')
   const [replyBody, setReplyBody] = useState('')
   const [replying, setReplying] = useState(false)
+  const [markingAsRead, setMarkingAsRead] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
 
@@ -67,11 +69,6 @@ function ContactMessages() {
         setError(null)
         const data = await getAllContactMessages()
         setMessages(data)
-        // Load read messages from localStorage
-        const stored = localStorage.getItem('readContactMessages')
-        if (stored) {
-          setReadMessages(new Set(JSON.parse(stored)))
-        }
       } catch (err: any) {
         console.error('Error fetching contact messages:', err)
         setError(err?.response?.data?.message || 'Failed to fetch contact messages')
@@ -83,13 +80,13 @@ function ContactMessages() {
     fetchMessages()
   }, [])
 
-  // Helper to check if message is read
-  const isRead = (id: number) => readMessages.has(id)
+  // Helper to check if message is read (using backend is_read field)
+  const isRead = (message: ContactMessage) => message.is_read === 1
 
   // Helper to get display message with status
   const getDisplayMessage = (msg: ContactMessage): DisplayMessage => ({
     ...msg,
-    status: isRead(msg.id) ? 'read' : 'unread',
+    status: isRead(msg) ? 'read' : 'unread',
   })
 
   const filteredMessages = messages
@@ -109,32 +106,39 @@ function ContactMessages() {
       const fullMessage = await getContactMessageById(message.id)
       setSelectedMessage(fullMessage)
       setViewDialogOpen(true)
-      // Mark as read when viewed
-      if (!isRead(message.id)) {
-        const newReadMessages = new Set(readMessages)
-        newReadMessages.add(message.id)
-        setReadMessages(newReadMessages)
-        localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+      // Mark as read when viewed (if not already read)
+      if (!isRead(fullMessage)) {
+        await handleMarkAsRead(fullMessage.id)
       }
     } catch (err: any) {
       console.error('Error fetching message details:', err)
       // Fallback to showing the message we already have
       setSelectedMessage(message)
       setViewDialogOpen(true)
-      if (!isRead(message.id)) {
-        const newReadMessages = new Set(readMessages)
-        newReadMessages.add(message.id)
-        setReadMessages(newReadMessages)
-        localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+      // Mark as read when viewed (if not already read)
+      if (!isRead(message)) {
+        await handleMarkAsRead(message.id)
       }
     }
   }
 
-  const handleMarkAsRead = (id: number) => {
-    const newReadMessages = new Set(readMessages)
-    newReadMessages.add(id)
-    setReadMessages(newReadMessages)
-    localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      setMarkingAsRead(id)
+      setError(null)
+      const updatedMessage = await markContactAsRead(id)
+      // Update the message in the list
+      setMessages(messages.map((m) => (m.id === id ? updatedMessage : m)))
+      // Update selected message if it's the same one
+      if (selectedMessage && selectedMessage.id === id) {
+        setSelectedMessage(updatedMessage)
+      }
+    } catch (err: any) {
+      console.error('Error marking message as read:', err)
+      setError(err?.response?.data?.message || 'Failed to mark message as read')
+    } finally {
+      setMarkingAsRead(null)
+    }
   }
 
   const handleDelete = async (id: number) => {
@@ -146,11 +150,6 @@ function ContactMessages() {
       setError(null)
       await deleteContactMessage(id)
       setMessages(messages.filter((m) => m.id !== id))
-      // Remove from read messages if it was there
-      const newReadMessages = new Set(readMessages)
-      newReadMessages.delete(id)
-      setReadMessages(newReadMessages)
-      localStorage.setItem('readContactMessages', JSON.stringify(Array.from(newReadMessages)))
       setSuccessMessage('Message deleted successfully')
     } catch (err: any) {
       console.error('Error deleting message:', err)
@@ -182,13 +181,14 @@ function ContactMessages() {
       setReplyDialogOpen(false)
       setReplySubject('')
       setReplyBody('')
-      // Refresh the message to get updated replies
-      const updatedMessage = await getContactMessageById(selectedMessage.id)
-      setSelectedMessage(updatedMessage)
-      // Update in messages list
-      setMessages(
-        messages.map((m) => (m.id === selectedMessage.id ? updatedMessage : m))
-      )
+      // Refresh all messages to get updated replies
+      const updatedMessages = await getAllContactMessages()
+      setMessages(updatedMessages)
+      // Update selected message if dialog is still open
+      const updatedMessage = updatedMessages.find((m) => m.id === selectedMessage.id)
+      if (updatedMessage) {
+        setSelectedMessage(updatedMessage)
+      }
     } catch (err: any) {
       console.error('Error sending reply:', err)
       setError(err?.response?.data?.message || 'Failed to send reply')
@@ -222,7 +222,7 @@ function ContactMessages() {
     a.click()
   }
 
-  const unreadCount = messages.filter((m) => !isRead(m.id)).length
+  const unreadCount = messages.filter((m) => !isRead(m)).length
 
   return (
     <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
@@ -334,14 +334,35 @@ function ContactMessages() {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2">{message.subject || 'No subject'}</Typography>
+                        <Box>
+                          <Typography variant="body2">{message.subject || 'No subject'}</Typography>
+                          {message.replies && message.replies.length > 0 && (
+                            <Chip
+                              icon={<ReplyIcon sx={{ fontSize: '0.75rem !important' }} />}
+                              label={`${message.replies.length} ${message.replies.length === 1 ? 'reply' : 'replies'}`}
+                              size="small"
+                              color="success"
+                              sx={{ mt: 0.5, fontSize: '0.7rem', height: 22, fontWeight: 600 }}
+                            />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={message.status}
-                          size="small"
-                          color={message.status === 'unread' ? 'error' : 'default'}
-                        />
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          <Chip
+                            label={message.status}
+                            size="small"
+                            color={message.status === 'unread' ? 'error' : 'default'}
+                          />
+                          {message.replies && message.replies.length > 0 && (
+                            <Chip
+                              label="Replied"
+                              size="small"
+                              color="success"
+                              sx={{ fontSize: '0.65rem', height: 18 }}
+                            />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         {new Date(message.created_at).toLocaleDateString()}
@@ -360,8 +381,13 @@ function ContactMessages() {
                               size="small"
                               onClick={() => handleMarkAsRead(message.id)}
                               color="primary"
+                              disabled={markingAsRead === message.id}
                             >
-                              <MarkReadIcon fontSize="small" />
+                              {markingAsRead === message.id ? (
+                                <CircularProgress size={16} />
+                              ) : (
+                                <MarkReadIcon fontSize="small" />
+                              )}
                             </IconButton>
                           )}
                           <IconButton
@@ -403,12 +429,28 @@ function ContactMessages() {
           }
         }}
       >
-        <DialogTitle>Message Details</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">{selectedMessage?.subject || 'No Subject'}</Typography>
+            {selectedMessage?.replies && selectedMessage.replies.length > 0 && (
+              <Chip
+                icon={<ReplyIcon />}
+                label={`${selectedMessage.replies.length} ${selectedMessage.replies.length === 1 ? 'Reply' : 'Replies'}`}
+                color="success"
+                sx={{ fontWeight: 600 }}
+              />
+            )}
+          </Box>
+        </DialogTitle>
         <DialogContent>
           {selectedMessage && (
             <Box sx={{ mt: 1 }}>
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6">{selectedMessage.subject || 'No Subject'}</Typography>
+                {selectedMessage.replies && selectedMessage.replies.length > 0 && (
+                  <Alert severity="success" icon={<ReplyIcon />} sx={{ mb: 2 }}>
+                    This message has {selectedMessage.replies.length} {selectedMessage.replies.length === 1 ? 'reply' : 'replies'}. Scroll down to view them.
+                  </Alert>
+                )}
               </Box>
               <Box
                 sx={{
@@ -464,29 +506,62 @@ function ContactMessages() {
                 </Box>
               )}
               {selectedMessage.replies && selectedMessage.replies.length > 0 && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    Previous Replies ({selectedMessage.replies.length})
-                  </Typography>
+                <Box sx={{ mt: 4 }}>
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <ReplyIcon color="success" />
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                      Replies ({selectedMessage.replies.length})
+                    </Typography>
+                  </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {selectedMessage.replies.map((reply: ContactReply) => (
-                      <Card key={reply.id} sx={{ p: 2, backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                            {reply.subject}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(reply.created_at).toLocaleString()}
-                          </Typography>
+                    {selectedMessage.replies.map((reply: ContactReply, index: number) => (
+                      <Card 
+                        key={reply.id} 
+                        sx={{ 
+                          p: 2.5, 
+                          backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                          border: '1px solid rgba(76, 175, 80, 0.2)',
+                          borderRadius: 2,
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                              {reply.subject}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Reply #{index + 1} • {new Date(reply.created_at).toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label="Replied"
+                            size="small"
+                            color="success"
+                            sx={{ fontSize: '0.7rem' }}
+                          />
                         </Box>
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 1.5, color: 'text.primary' }}>
                           {reply.body}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Sent by: {reply.firstName && reply.lastName
-                            ? `${reply.firstName} ${reply.lastName}`
-                            : reply.admin_email || 'System'}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 1, borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            Sent by:
+                          </Typography>
+                          <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
+                            {reply.firstName && reply.lastName
+                              ? `${reply.firstName} ${reply.lastName}`
+                              : reply.admin_email || 'System'}
+                          </Typography>
+                          {reply.sent_to_email && (
+                            <>
+                              <Typography variant="caption" color="text.secondary" sx={{ mx: 0.5 }}>•</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                To: {reply.sent_to_email}
+                              </Typography>
+                            </>
+                          )}
+                        </Box>
                       </Card>
                     ))}
                   </Box>

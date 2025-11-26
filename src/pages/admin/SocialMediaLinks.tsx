@@ -242,22 +242,12 @@ function SocialMediaLinks() {
             <Box sx={{ mt: 2 }}>
               <TextField
                 fullWidth
-                select
                 label="Platform"
                 value={selectedLink.platform}
-                onChange={(e) => setSelectedLink({ ...selectedLink, platform: e.target.value })}
-                SelectProps={{
-                  native: true,
-                }}
+                disabled
                 sx={{ mb: 2 }}
-              >
-                <option value="facebook">Facebook</option>
-                <option value="twitter">Twitter</option>
-                <option value="instagram">Instagram</option>
-                <option value="linkedin">LinkedIn</option>
-                <option value="youtube">YouTube</option>
-                <option value="website">Website</option>
-              </TextField>
+                helperText="Platform cannot be changed"
+              />
               <TextField
                 fullWidth
                 label="URL"

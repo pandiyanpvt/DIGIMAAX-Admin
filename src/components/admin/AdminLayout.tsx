@@ -11,7 +11,7 @@ import {
   GalleryManagement,
   ReportsAnalytics,
   AuditLogs,
-  SystemSettings,
+  UserProfile,
   ContactMessages,
   HeaderImages,
   SocialMediaLinks,
@@ -19,6 +19,7 @@ import {
   Products,
   Orders,
   Payments,
+  Users,
   UserRoleManagement,
   CartDetails,
   UserLogs,
@@ -74,6 +75,7 @@ function AdminLayout() {
       products: 'Products',
       orders: 'Orders',
       payments: 'Payments',
+      users: 'Users Management',
       'user-roles': 'User Role Management',
       'cart-details': 'Cart Details',
       'user-logs': 'User Login Logs',
@@ -85,7 +87,7 @@ function AdminLayout() {
       promotions: 'Promotions Management',
       reports: 'Reports & Analytics',
       'audit-logs': 'Audit Logs',
-      settings: 'System Settings',
+      profile: 'User Profile',
     }
     return titles[menuId] || 'Dashboard'
   }
@@ -112,6 +114,8 @@ function AdminLayout() {
       case 'payments':
         return <Payments />
       // Dev View Pages
+      case 'users':
+        return <Users />
       case 'user-roles':
         return <UserRoleManagement />
       case 'cart-details':
@@ -135,8 +139,8 @@ function AdminLayout() {
         return <ReportsAnalytics />
       case 'audit-logs':
         return <AuditLogs />
-      case 'settings':
-        return <SystemSettings />
+      case 'profile':
+        return <UserProfile />
       case 'logout':
         // Don't navigate during render - handle in useEffect
         return null

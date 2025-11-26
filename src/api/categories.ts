@@ -3,12 +3,12 @@ import apiClient from './client'
 export interface ProductCategory {
   id: number
   name: string
-  is_active?: boolean
+  is_active?: boolean | number
   product_count?: number
-  customization_color?: boolean
-  customization_size?: boolean
-  customization_text?: boolean
-  customization_image?: boolean
+  customization_color?: boolean | number
+  customization_size?: boolean | number
+  customization_text?: boolean | number
+  customization_image?: boolean | number
   created_at: string
   updated_at: string
 }

@@ -46,6 +46,7 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
       'orders',
       'payments',
       // Dev View
+      'users',
       'user-roles',
       'cart-details',
       'user-logs',

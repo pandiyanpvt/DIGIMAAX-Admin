@@ -9,10 +9,8 @@ import {
   Share as SocialIcon,
   Category as CategoryIcon,
   Inventory as ProductIcon,
-  ShoppingCart as OrderIcon,
-  Payment as PaymentIcon,
   AdminPanelSettings as RoleIcon,
-  ShoppingBag as CartIcon,
+  Person as PersonIcon,
   History as LogsIcon,
 } from '@mui/icons-material'
 
@@ -41,11 +39,9 @@ const menuItems: MenuItem[] = [
   { id: 'social-media', label: 'Social Media', icon: <SocialIcon />, shortLabel: 'Social' },
   { id: 'product-categories', label: 'Categories', icon: <CategoryIcon />, shortLabel: 'Categories' },
   { id: 'products', label: 'Products', icon: <ProductIcon />, shortLabel: 'Products' },
-  { id: 'orders', label: 'Orders', icon: <OrderIcon />, shortLabel: 'Orders' },
-  { id: 'payments', label: 'Payments', icon: <PaymentIcon />, shortLabel: 'Payments' },
   // Dev View
+  { id: 'users', label: 'Users', icon: <PersonIcon />, shortLabel: 'Users' },
   { id: 'user-roles', label: 'User Roles', icon: <RoleIcon />, shortLabel: 'Roles' },
-  { id: 'cart-details', label: 'Cart Details', icon: <CartIcon />, shortLabel: 'Carts' },
   { id: 'user-logs', label: 'User Logs', icon: <LogsIcon />, shortLabel: 'Logs' },
   // Essential
   { id: 'logout', label: 'Logout', icon: <LogoutIcon />, shortLabel: 'Exit' },
@@ -245,7 +241,6 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
                     transition: 'all 0.3s ease',
                     whiteSpace: 'nowrap',
                     flex: 1,
-                    display: { xs: 'none', sm: 'block' },
                   }}
                 >
                   {isMobile ? (item.shortLabel || item.label) : item.label}

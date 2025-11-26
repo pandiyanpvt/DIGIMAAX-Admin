@@ -48,7 +48,7 @@ const samplePromotions = [
   {
     id: 2,
     title: 'New Customer Discount',
-    description: '$10 off first booking',
+    description: '€10 off first booking',
     startDate: '2024-01-15',
     endDate: '2024-12-31',
     discountType: 'amount',
@@ -193,7 +193,7 @@ function PromotionsManagement() {
                   <TableCell>
                     {promo.discountType === 'percent'
                       ? `${promo.discountValue}%`
-                      : `$${promo.discountValue}`}
+                      : `€${promo.discountValue}`}
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -32,13 +32,19 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   Inventory as ProductIcon,
+  CloudUpload as UploadIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
 import {
   getAllProducts,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  deleteProductImage,
+  changePrimaryImage,
+  addAdditionalImages,
   type Product,
 } from '../../api/products'
 import { getAllCategories, type ProductCategory } from '../../api/categories'
@@ -53,23 +59,36 @@ interface ProductDisplay {
   price: number
   stock: number
   imageUrl: string
+  allImages?: Array<{ id: number; image_url: string; is_primary: number; sort_order: number }>
   isActive: boolean
   createdAt: string
+  shortDesc?: string
+  isFeatured?: boolean
+  description?: string
+  badge?: string
 }
 
 // Map backend data to frontend display format
-const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => ({
-  id: backendProduct.id,
-  name: backendProduct.title, // Use title as name for display
-  title: backendProduct.title,
-  category: backendProduct.category_name || backendProduct.category?.name || 'Uncategorized',
-  categoryId: backendProduct.category_id || backendProduct.category?.id,
-  price: typeof backendProduct.price === 'string' ? parseFloat(backendProduct.price) : (backendProduct.price || 0),
-  stock: backendProduct.stock_quantity ?? 0,
-  imageUrl: backendProduct.primary_image || (backendProduct.images && backendProduct.images[0]?.image_url) || '',
-  isActive: backendProduct.is_active ?? true,
-  createdAt: backendProduct.created_at ? new Date(backendProduct.created_at).toISOString().split('T')[0] : '',
-})
+const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
+  // Find primary image or use first image
+  const primaryImage = backendProduct.images?.find(img => img.is_primary === 1) || backendProduct.images?.[0]
+  
+  return {
+    id: backendProduct.id,
+    name: backendProduct.title, // Use title as name for display
+    title: backendProduct.title,
+    category: backendProduct.category_name || backendProduct.category?.name || 'Uncategorized',
+    categoryId: backendProduct.category_id || backendProduct.category?.id,
+    price: typeof backendProduct.price === 'string' ? parseFloat(backendProduct.price) : (backendProduct.price || 0),
+    stock: backendProduct.stock_quantity ?? 0,
+    imageUrl: backendProduct.primary_image || primaryImage?.image_url || '',
+    allImages: backendProduct.images || [],
+    isActive: backendProduct.is_active ?? true,
+    createdAt: backendProduct.created_at ? new Date(backendProduct.created_at).toISOString().split('T')[0] : '',
+    shortDesc: backendProduct.short_desc || '',
+    isFeatured: backendProduct.is_featured ?? false,
+  }
+}
 
 function Products() {
   const [products, setProducts] = useState<ProductDisplay[]>([])
@@ -82,6 +101,14 @@ function Products() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedAdditionalImages, setSelectedAdditionalImages] = useState<File[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
+  const [changePrimaryImageDialogOpen, setChangePrimaryImageDialogOpen] = useState(false)
+  const [addAdditionalImagesDialogOpen, setAddAdditionalImagesDialogOpen] = useState(false)
+  const [selectedProductForImage, setSelectedProductForImage] = useState<ProductDisplay | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Fetch products and categories on mount
   useEffect(() => {
@@ -110,7 +137,7 @@ function Products() {
     }
 
     fetchData()
-  }, [])
+  }, [refreshKey])
 
   const filteredProducts = products.filter(
     (p) =>
@@ -130,17 +157,81 @@ function Products() {
       imageUrl: '',
       isActive: true,
       createdAt: '',
+      shortDesc: '',
+      isFeatured: false,
     })
+    setSelectedFile(null)
+    setSelectedAdditionalImages([])
     setAddDialogOpen(true)
     setError(null)
     setSuccessMessage(null)
   }
 
-  const handleEdit = (product: ProductDisplay) => {
-    setSelectedProduct({ ...product })
-    setEditDialogOpen(true)
-    setError(null)
-    setSuccessMessage(null)
+  const handleEdit = async (product: ProductDisplay) => {
+    try {
+      setError(null)
+      // Fetch full product details to get all images
+      const fullProduct = await getProductById(product.id)
+      const mappedProduct = mapBackendToFrontend(fullProduct)
+      setSelectedProduct(mappedProduct)
+      setSelectedFile(null)
+      setSelectedAdditionalImages([])
+      setEditDialogOpen(true)
+      setSuccessMessage(null)
+    } catch (err: any) {
+      console.error('Error fetching product details:', err)
+      // Fallback to using the product we already have
+      setSelectedProduct({ ...product })
+      setSelectedFile(null)
+      setSelectedAdditionalImages([])
+      setEditDialogOpen(true)
+      setError(err?.response?.data?.error?.message || 'Failed to load product details')
+    }
+  }
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setSelectedFile(file)
+    const previewUrl = URL.createObjectURL(file)
+    if (selectedProduct) {
+      setSelectedProduct({ ...selectedProduct, imageUrl: previewUrl })
+    }
+    setSuccessMessage('Primary image selected successfully')
+  }
+
+  const handleAdditionalImagesUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    const newFiles = Array.from(files)
+    
+    // Combine with existing files
+    const combinedFiles = [...selectedAdditionalImages, ...newFiles]
+    
+    // Validate max 10 images total
+    if (combinedFiles.length > 10) {
+      setError(`Maximum 10 additional images allowed. You already have ${selectedAdditionalImages.length} image(s) selected.`)
+      // Reset the input
+      event.target.value = ''
+      return
+    }
+
+    // Validate total size (max 20MB)
+    const totalSize = combinedFiles.reduce((sum, file) => sum + file.size, 0)
+    const maxSize = 20 * 1024 * 1024 // 20MB in bytes
+    if (totalSize > maxSize) {
+      setError('Total size of additional images must not exceed 20MB')
+      // Reset the input
+      event.target.value = ''
+      return
+    }
+
+    setSelectedAdditionalImages(combinedFiles)
+    setSuccessMessage(`${newFiles.length} additional image(s) added. Total: ${combinedFiles.length}`)
+    // Reset the input to allow selecting the same files again if needed
+    event.target.value = ''
   }
 
   const handleSave = async () => {
@@ -165,15 +256,44 @@ function Products() {
       setError(null)
       setSuccessMessage(null)
 
-      const productPayload = {
+      const productPayload: any = {
         title: selectedProduct.title,
-        category_id: selectedProduct.categoryId,
         price: selectedProduct.price,
-        stock_quantity: selectedProduct.stock,
-        in_stock: selectedProduct.stock > 0,
-        is_active: selectedProduct.isActive,
-        images: selectedProduct.imageUrl ? [selectedProduct.imageUrl] : undefined,
       }
+
+      // Optional fields - only include if they have values
+      if (selectedProduct.categoryId) {
+        productPayload.category_id = selectedProduct.categoryId
+      }
+      if (selectedProduct.stock !== undefined) {
+        productPayload.stock_quantity = selectedProduct.stock
+        productPayload.in_stock = selectedProduct.stock > 0
+      }
+      if (selectedProduct.shortDesc) {
+        productPayload.short_desc = selectedProduct.shortDesc
+      }
+      if (selectedProduct.description) {
+        productPayload.description = selectedProduct.description
+      }
+      if (selectedProduct.badge) {
+        productPayload.badge = selectedProduct.badge
+      }
+      productPayload.is_active = selectedProduct.isActive
+      productPayload.is_featured = selectedProduct.isFeatured || false
+
+      // For CREATE: Include images
+      if (!selectedProduct.id || selectedProduct.id === 0) {
+        // Primary image is required for new products
+        if (!selectedFile) {
+          setError('Please select a primary image')
+          return
+        }
+        productPayload.image = selectedFile
+        if (selectedAdditionalImages.length > 0) {
+          productPayload.images = selectedAdditionalImages
+        }
+      }
+      // For UPDATE: No image handling - use separate APIs for image changes
 
       if (selectedProduct.id && selectedProduct.id > 0) {
         // Update existing product
@@ -185,15 +305,24 @@ function Products() {
         setProducts(products.map((p) => (p.id === selectedProduct.id ? updatedProduct : p)))
         setEditDialogOpen(false)
         setSuccessMessage('Product updated successfully!')
+        setRefreshKey((k) => k + 1)
       } else {
-        // Create new product
+        // Create new product - primary image file is required
+        if (!selectedFile) {
+          setError('Please select a primary image')
+          return
+        }
         const created = await createProduct(productPayload)
         const newProduct = mapBackendToFrontend(created)
         setProducts([...products, newProduct])
         setAddDialogOpen(false)
         setSuccessMessage('Product created successfully!')
+        setRefreshKey((k) => k + 1)
       }
       setSelectedProduct(null)
+      setSelectedFile(null)
+      setSelectedAdditionalImages([])
+      setImagesToDelete([])
     } catch (err: any) {
       console.error('Error saving product:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to save product')
@@ -236,6 +365,123 @@ function Products() {
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to update product status')
       // Revert on error
       setProducts(products.map((p) => (p.id === id ? product : p)))
+    }
+  }
+
+  const handleDeleteImage = async (imageId: number) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) {
+      return
+    }
+
+    try {
+      setDeletingImageId(imageId)
+      setError(null)
+      await deleteProductImage(imageId)
+      
+      // Refresh product details to get updated image list
+      if (selectedProductForImage && selectedProductForImage.id) {
+        const fullProduct = await getProductById(selectedProductForImage.id)
+        const mappedProduct = mapBackendToFrontend(fullProduct)
+        setSelectedProductForImage(mappedProduct)
+      }
+      
+      // Also update the products list
+      setRefreshKey((k) => k + 1)
+      setSuccessMessage('Image deleted successfully')
+    } catch (err: any) {
+      console.error('Error deleting image:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete image')
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
+
+  const handleChangePrimaryImage = async (product: ProductDisplay) => {
+    try {
+      setError(null)
+      const fullProduct = await getProductById(product.id)
+      const mappedProduct = mapBackendToFrontend(fullProduct)
+      setSelectedProductForImage(mappedProduct)
+      setSelectedFile(null)
+      setChangePrimaryImageDialogOpen(true)
+    } catch (err: any) {
+      console.error('Error fetching product details:', err)
+      setError(err?.response?.data?.error?.message || 'Failed to load product details')
+    }
+  }
+
+  const handleAddAdditionalImages = async (product: ProductDisplay) => {
+    try {
+      setError(null)
+      const fullProduct = await getProductById(product.id)
+      const mappedProduct = mapBackendToFrontend(fullProduct)
+      setSelectedProductForImage(mappedProduct)
+      setSelectedAdditionalImages([])
+      setAddAdditionalImagesDialogOpen(true)
+    } catch (err: any) {
+      console.error('Error fetching product details:', err)
+      setError(err?.response?.data?.error?.message || 'Failed to load product details')
+    }
+  }
+
+  const handleSavePrimaryImage = async () => {
+    if (!selectedProductForImage || !selectedFile) {
+      setError('Please select an image')
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      setError(null)
+      await changePrimaryImage(selectedProductForImage.id, selectedFile)
+      setChangePrimaryImageDialogOpen(false)
+      setSelectedFile(null)
+      setSelectedProductForImage(null)
+      setSuccessMessage('Primary image changed successfully')
+      setRefreshKey((k) => k + 1)
+    } catch (err: any) {
+      console.error('Error changing primary image:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to change primary image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleSaveAdditionalImages = async () => {
+    if (!selectedProductForImage || selectedAdditionalImages.length === 0) {
+      setError('Please select at least one image')
+      return
+    }
+
+    // Validate max 10 images total (existing + new)
+    const existingCount = selectedProductForImage.allImages?.filter(img => img.is_primary === 0).length || 0
+    if (existingCount + selectedAdditionalImages.length > 10) {
+      setError(`Maximum 10 additional images allowed. You already have ${existingCount} image(s).`)
+      return
+    }
+
+    // Validate total size (max 20MB)
+    const totalSize = selectedAdditionalImages.reduce((sum, file) => sum + file.size, 0)
+    const maxSize = 20 * 1024 * 1024 // 20MB in bytes
+    if (totalSize > maxSize) {
+      setError('Total size of additional images must not exceed 20MB')
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      setError(null)
+      await addAdditionalImages(selectedProductForImage.id, selectedAdditionalImages)
+      setAddAdditionalImagesDialogOpen(false)
+      setSelectedAdditionalImages([])
+      setSelectedProductForImage(null)
+      setSuccessMessage(`${selectedAdditionalImages.length} additional image(s) added successfully`)
+      setRefreshKey((k) => k + 1)
+    } catch (err: any) {
+      console.error('Error adding additional images:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to add additional images')
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -309,13 +555,29 @@ function Products() {
                 <TableRow key={product.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar
-                        src={product.imageUrl}
-                        variant="rounded"
-                        sx={{ width: 40, height: 40 }}
-                      >
-                        <ProductIcon />
-                      </Avatar>
+                      <Box sx={{ position: 'relative' }}>
+                        <Avatar
+                          src={product.imageUrl}
+                          variant="rounded"
+                          sx={{ width: 40, height: 40 }}
+                        >
+                          <ProductIcon />
+                        </Avatar>
+                        {product.allImages && product.allImages.length > 1 && (
+                          <Chip
+                            label={`+${product.allImages.length - 1}`}
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              bottom: -4,
+                              right: -4,
+                              fontSize: '0.65rem',
+                              height: 18,
+                              minWidth: 24,
+                            }}
+                          />
+                        )}
+                      </Box>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
                         {product.name}
                       </Typography>
@@ -324,6 +586,9 @@ function Products() {
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
                       ID: {product.id}
+                      {product.allImages && product.allImages.length > 0 && (
+                        <> • {product.allImages.length} img</>
+                      )}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -331,7 +596,7 @@ function Products() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(String(product.price || 0)).toFixed(2)}
+                      €{typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(String(product.price || 0)).toFixed(2)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -354,21 +619,43 @@ function Products() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEdit(product)}
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(product.id)}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEdit(product)}
+                          color="primary"
+                          title="Edit Product"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(product.id)}
+                          color="error"
+                          title="Delete Product"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleChangePrimaryImage(product)}
+                          sx={{ fontSize: '0.7rem', minWidth: 'auto', px: 1 }}
+                        >
+                          Change Image
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleAddAdditionalImages(product)}
+                          sx={{ fontSize: '0.7rem', minWidth: 'auto', px: 1 }}
+                        >
+                          Add Images
+                        </Button>
+                      </Box>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -386,6 +673,8 @@ function Products() {
           setAddDialogOpen(false)
           setEditDialogOpen(false)
           setSelectedProduct(null)
+          setSelectedFile(null)
+          setSelectedAdditionalImages([])
         }}
         maxWidth="sm"
         fullWidth
@@ -450,13 +739,110 @@ function Products() {
               />
               <TextField
                 fullWidth
-                label="Image URL"
-                value={selectedProduct.imageUrl}
+                label="Short Description"
+                value={selectedProduct.shortDesc || ''}
                 onChange={(e) =>
-                  setSelectedProduct({ ...selectedProduct, imageUrl: e.target.value })
+                  setSelectedProduct({ ...selectedProduct, shortDesc: e.target.value })
                 }
+                multiline
+                rows={2}
                 sx={{ mb: 2 }}
               />
+              {/* Image uploads only for CREATE, not for UPDATE */}
+              {(!selectedProduct.id || selectedProduct.id === 0) && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Primary Image *
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    disabled={saving}
+                  >
+                    {saving ? 'Uploading...' : 'Upload Primary Image *'}
+                    <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                  </Button>
+                  {selectedProduct.imageUrl && (
+                    <Box
+                      component="img"
+                      src={selectedProduct.imageUrl}
+                      alt="Primary Preview"
+                      sx={{
+                        width: '100%',
+                        maxHeight: 200,
+                        objectFit: 'contain',
+                        borderRadius: 1,
+                        mb: 2,
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = '/placeholder-image.png'
+                      }}
+                    />
+                  )}
+                  <Typography variant="subtitle2" sx={{ mb: 1, mt: 2, fontWeight: 600 }}>
+                    Additional Images (Max 10, Max 20MB total)
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    disabled={saving}
+                  >
+                    {saving ? 'Uploading...' : `Upload Additional Images (${selectedAdditionalImages.length} selected)`}
+                    <input type="file" hidden accept="image/*" multiple onChange={handleAdditionalImagesUpload} />
+                  </Button>
+                  {selectedAdditionalImages.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        {selectedAdditionalImages.length} image(s) selected
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {selectedAdditionalImages.map((file, index) => (
+                          <Box key={index} sx={{ position: 'relative' }}>
+                            <Box
+                              component="img"
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              sx={{
+                                width: 80,
+                                height: 80,
+                                objectFit: 'cover',
+                                borderRadius: 1,
+                                border: '1px solid rgba(255,255,255,0.1)',
+                              }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const newFiles = selectedAdditionalImages.filter((_, i) => i !== index)
+                                setSelectedAdditionalImages(newFiles)
+                              }}
+                              sx={{
+                                position: 'absolute',
+                                top: -8,
+                                right: -8,
+                                bgcolor: 'error.main',
+                                color: 'white',
+                                width: 20,
+                                height: 20,
+                                '&:hover': { bgcolor: 'error.dark' },
+                              }}
+                            >
+                              <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </>
+              )}
               <FormControlLabel
                 control={
                   <Switch
@@ -467,6 +853,18 @@ function Products() {
                   />
                 }
                 label="Active"
+                sx={{ mb: 1 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedProduct.isFeatured || false}
+                    onChange={(e) =>
+                      setSelectedProduct({ ...selectedProduct, isFeatured: e.target.checked })
+                    }
+                  />
+                }
+                label="Featured"
               />
             </Box>
           )}
@@ -477,6 +875,8 @@ function Products() {
               setAddDialogOpen(false)
               setEditDialogOpen(false)
               setSelectedProduct(null)
+              setSelectedFile(null)
+              setSelectedAdditionalImages([])
             }}
           >
             Cancel
@@ -488,6 +888,237 @@ function Products() {
             sx={{ backgroundColor: 'primary.main' }}
           >
             {saving ? <CircularProgress size={20} /> : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Change Primary Image Dialog */}
+      <Dialog
+        open={changePrimaryImageDialogOpen}
+        onClose={() => {
+          setChangePrimaryImageDialogOpen(false)
+          setSelectedFile(null)
+          setSelectedProductForImage(null)
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Change Primary Image</DialogTitle>
+        <DialogContent>
+          {selectedProductForImage && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Current primary image:
+              </Typography>
+              {selectedProductForImage.imageUrl && (
+                <Box
+                  component="img"
+                  src={selectedProductForImage.imageUrl}
+                  alt="Current Primary"
+                  sx={{
+                    width: '100%',
+                    maxHeight: 200,
+                    objectFit: 'contain',
+                    borderRadius: 1,
+                    mb: 2,
+                  }}
+                />
+              )}
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+                sx={{ mb: 2 }}
+                disabled={uploadingImage}
+              >
+                {uploadingImage ? 'Uploading...' : 'Select New Primary Image *'}
+                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+              </Button>
+              {selectedFile && (
+                <Box
+                  component="img"
+                  src={URL.createObjectURL(selectedFile)}
+                  alt="New Primary Preview"
+                  sx={{
+                    width: '100%',
+                    maxHeight: 200,
+                    objectFit: 'contain',
+                    borderRadius: 1,
+                    mb: 2,
+                  }}
+                />
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setChangePrimaryImageDialogOpen(false)
+              setSelectedFile(null)
+              setSelectedProductForImage(null)
+            }}
+            disabled={uploadingImage}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSavePrimaryImage}
+            variant="contained"
+            disabled={uploadingImage || !selectedFile}
+            sx={{ backgroundColor: 'primary.main' }}
+          >
+            {uploadingImage ? <CircularProgress size={20} /> : 'Change Image'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Additional Images Dialog */}
+      <Dialog
+        open={addAdditionalImagesDialogOpen}
+        onClose={() => {
+          setAddAdditionalImagesDialogOpen(false)
+          setSelectedAdditionalImages([])
+          setSelectedProductForImage(null)
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add Additional Images</DialogTitle>
+        <DialogContent>
+          {selectedProductForImage && (
+            <Box sx={{ mt: 2 }}>
+              {/* Show existing additional images with delete option */}
+              {selectedProductForImage.allImages && selectedProductForImage.allImages.filter(img => img.is_primary === 0).length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Existing Additional Images ({selectedProductForImage.allImages.filter(img => img.is_primary === 0).length}):
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedProductForImage.allImages
+                      .filter(img => img.is_primary === 0)
+                      .map((img) => (
+                        <Box key={img.id} sx={{ position: 'relative' }}>
+                          <Box
+                            component="img"
+                            src={img.image_url}
+                            alt={`Existing ${img.id}`}
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              opacity: deletingImageId === img.id ? 0.5 : 1,
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteImage(img.id)}
+                            disabled={deletingImageId === img.id || uploadingImage}
+                            sx={{
+                              position: 'absolute',
+                              top: -8,
+                              right: -8,
+                              bgcolor: 'error.main',
+                              color: 'white',
+                              width: 20,
+                              height: 20,
+                              '&:hover': { bgcolor: 'error.dark' },
+                              '&:disabled': { opacity: 0.5 },
+                            }}
+                          >
+                            {deletingImageId === img.id ? (
+                              <CircularProgress size={12} sx={{ color: 'white' }} />
+                            ) : (
+                              <CloseIcon sx={{ fontSize: 14 }} />
+                            )}
+                          </IconButton>
+                        </Box>
+                      ))}
+                  </Box>
+                </Box>
+              )}
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Add New Images (Max 10 total, Max 20MB)
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+                sx={{ mb: 2 }}
+                disabled={uploadingImage}
+              >
+                {uploadingImage ? 'Uploading...' : `Select Images (${selectedAdditionalImages.length} selected)`}
+                <input type="file" hidden accept="image/*" multiple onChange={handleAdditionalImagesUpload} />
+              </Button>
+              {selectedAdditionalImages.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                    {selectedAdditionalImages.length} new image(s) selected
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {selectedAdditionalImages.map((file, index) => (
+                      <Box key={index} sx={{ position: 'relative' }}>
+                        <Box
+                          component="img"
+                          src={URL.createObjectURL(file)}
+                          alt={`Preview ${index + 1}`}
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            const newFiles = selectedAdditionalImages.filter((_, i) => i !== index)
+                            setSelectedAdditionalImages(newFiles)
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            top: -8,
+                            right: -8,
+                            bgcolor: 'error.main',
+                            color: 'white',
+                            width: 20,
+                            height: 20,
+                            '&:hover': { bgcolor: 'error.dark' },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setAddAdditionalImagesDialogOpen(false)
+              setSelectedAdditionalImages([])
+              setSelectedProductForImage(null)
+            }}
+            disabled={uploadingImage}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveAdditionalImages}
+            variant="contained"
+            disabled={uploadingImage || selectedAdditionalImages.length === 0}
+            sx={{ backgroundColor: 'primary.main' }}
+          >
+            {uploadingImage ? <CircularProgress size={20} /> : 'Add Images'}
           </Button>
         </DialogActions>
       </Dialog>

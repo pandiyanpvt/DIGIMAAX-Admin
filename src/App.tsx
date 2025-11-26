@@ -142,6 +142,14 @@ function App() {
 
         {/* Protected Routes - Dev/Admin Management Pages */}
         <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/user-roles"
           element={
             <ProtectedRoute>
@@ -229,14 +237,6 @@ function App() {
         />
         <Route
           path="/audit-logs"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
           element={
             <ProtectedRoute>
               <AdminLayout />

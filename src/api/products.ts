@@ -35,13 +35,24 @@ export interface CreateProductPayload {
   in_stock?: boolean
   stock_quantity?: number
   is_featured?: boolean
-  image?: File
-  images?: string[] // Array of image URLs
+  badge?: string
+  image?: File // Primary image (single file)
+  images?: File[] // Additional images (multiple files, max 10)
 }
 
-export interface UpdateProductPayload extends Partial<CreateProductPayload> {
+export interface UpdateProductPayload {
   id: number
+  title?: string
+  category_id?: number
+  price?: number
+  short_desc?: string
+  description?: string
+  badge?: string
+  in_stock?: boolean
+  stock_quantity?: number
+  is_featured?: boolean
   is_active?: boolean
+  // Note: image and images fields removed - use separate APIs for image changes
 }
 
 export interface GetProductsParams {
@@ -90,56 +101,113 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
     formData.append('price', payload.price.toString())
     formData.append('category_id', payload.category_id.toString())
     
-    if (payload.description) formData.append('description', payload.description)
-    if (payload.short_desc) formData.append('short_desc', payload.short_desc)
-    if (payload.in_stock !== undefined) formData.append('in_stock', payload.in_stock.toString())
-    if (payload.stock_quantity !== undefined) formData.append('stock_quantity', payload.stock_quantity.toString())
-    if (payload.is_featured !== undefined) formData.append('is_featured', payload.is_featured.toString())
-    if (payload.image) formData.append('image', payload.image)
+    // Always send these fields with defaults if not provided
+    formData.append('short_desc', payload.short_desc || payload.title)
+    formData.append('in_stock', (payload.in_stock !== undefined ? payload.in_stock : true) ? 'true' : 'false')
+    formData.append('stock_quantity', (payload.stock_quantity !== undefined ? payload.stock_quantity : 0).toString())
+    formData.append('is_featured', (payload.is_featured !== undefined ? payload.is_featured : false) ? 'true' : 'false')
+    
+    if (payload.image) {
+      formData.append('image', payload.image)
+    }
+    
+    // Additional images (multiple files)
     if (payload.images && Array.isArray(payload.images)) {
-      formData.append('images', JSON.stringify(payload.images))
+      payload.images.forEach((file) => {
+        formData.append('images', file)
+      })
+    }
+
+    // Log all FormData entries
+    console.log('FormData entries:')
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, `(File, ${value.size} bytes)`)
+      } else {
+        console.log(`${key}:`, value)
+      }
     }
 
     const { data } = await apiClient.post('/api/products', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
     console.error('Error creating product:', error)
+    console.error('Response data:', error?.response?.data)
     throw error
   }
 }
 
-// Update product
+// Update product (text fields only, no images)
 export async function updateProduct(payload: UpdateProductPayload): Promise<Product> {
   try {
-    const formData = new FormData()
+    // Update API now only accepts JSON, no file uploads
+    const updateData: any = {}
     
-    if (payload.title) formData.append('title', payload.title)
-    if (payload.price !== undefined) formData.append('price', payload.price.toString())
-    if (payload.category_id !== undefined) formData.append('category_id', payload.category_id.toString())
-    if (payload.description !== undefined) formData.append('description', payload.description)
-    if (payload.short_desc !== undefined) formData.append('short_desc', payload.short_desc)
-    if (payload.in_stock !== undefined) formData.append('in_stock', payload.in_stock.toString())
-    if (payload.stock_quantity !== undefined) formData.append('stock_quantity', payload.stock_quantity.toString())
-    if (payload.is_featured !== undefined) formData.append('is_featured', payload.is_featured.toString())
-    if (payload.image) formData.append('image', payload.image)
-    if (payload.images && Array.isArray(payload.images)) {
-      formData.append('images', JSON.stringify(payload.images))
-    }
+    // Required fields
+    if (payload.title) updateData.title = payload.title
+    if (payload.price !== undefined) updateData.price = payload.price
+    
+    // Optional fields - only send if provided
+    if (payload.category_id !== undefined) updateData.category_id = payload.category_id
+    if (payload.short_desc !== undefined) updateData.short_desc = payload.short_desc
+    if (payload.description !== undefined) updateData.description = payload.description
+    if (payload.badge !== undefined) updateData.badge = payload.badge
+    if (payload.in_stock !== undefined) updateData.in_stock = payload.in_stock
+    if (payload.stock_quantity !== undefined) updateData.stock_quantity = payload.stock_quantity
+    if (payload.is_featured !== undefined) updateData.is_featured = payload.is_featured
+    if (payload.is_active !== undefined) updateData.is_active = payload.is_active
 
-    const { data } = await apiClient.put(`/api/products/${payload.id}`, formData, {
+    const { data } = await apiClient.put(`/api/products/${payload.id}`, updateData)
+    // Backend returns { success: true, data: {...} }
+    return data?.success ? data.data : data
+  } catch (error: any) {
+    console.error('Error updating product:', error)
+    console.error('Response data:', error?.response?.data)
+    throw error
+  }
+}
+
+// Change primary image
+export async function changePrimaryImage(productId: number, image: File): Promise<Product> {
+  try {
+    const formData = new FormData()
+    formData.append('image', image)
+
+    const { data } = await apiClient.put(`/api/products/${productId}/primary-image`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error updating product:', error)
+    console.error('Error changing primary image:', error)
+    throw error
+  }
+}
+
+// Add additional images
+export async function addAdditionalImages(productId: number, images: File[]): Promise<Product> {
+  try {
+    const formData = new FormData()
+    images.forEach((file) => {
+      formData.append('images', file)
+    })
+
+    const { data } = await apiClient.post(`/api/products/${productId}/additional-images`, formData, {
+      headers: {
+        'Content-Type': undefined as any,
+      },
+    })
+    // Backend returns { success: true, data: {...} }
+    return data?.success ? data.data : data
+  } catch (error: any) {
+    console.error('Error adding additional images:', error)
     throw error
   }
 }
@@ -150,6 +218,16 @@ export async function deleteProduct(id: number): Promise<void> {
     await apiClient.delete(`/api/products/${id}`)
   } catch (error: any) {
     console.error('Error deleting product:', error)
+    throw error
+  }
+}
+
+// Delete product image
+export async function deleteProductImage(imageId: number): Promise<void> {
+  try {
+    await apiClient.delete(`/api/products/images/${imageId}`)
+  } catch (error: any) {
+    console.error('Error deleting product image:', error)
     throw error
   }
 }

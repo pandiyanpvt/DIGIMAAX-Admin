@@ -68,9 +68,9 @@ const sampleServices: Service[] = [
     serviceType: 'CCTV Installation',
     description: 'Professional CCTV installation services to secure your business or home. We provide high-quality cameras and DVR systems with expert installation.',
     packages: [
-      { name: 'Basic', description: '2 Cameras + DVR', price: 'LKR 25,000' },
-      { name: 'Standard', description: '4 Cameras + DVR', price: 'LKR 45,000' },
-      { name: 'Premium', description: '8 Cameras + DVR', price: 'LKR 75,000' },
+      { name: 'Basic', description: '2 Cameras + DVR', price: '€25,000' },
+      { name: 'Standard', description: '4 Cameras + DVR', price: '€45,000' },
+      { name: 'Premium', description: '8 Cameras + DVR', price: '€75,000' },
     ],
     includedItems: [
       'Free site inspection',
@@ -389,7 +389,7 @@ function ServicesManagement() {
                         label="Price"
                         value={pkg.price}
                         onChange={(e) => updatePackage(index, 'price', e.target.value)}
-                        placeholder="e.g., LKR 25,000"
+                        placeholder="e.g., €25,000"
                       />
                     </Grid>
                   </Grid>

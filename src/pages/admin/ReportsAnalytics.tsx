@@ -84,7 +84,7 @@ function ReportsAnalytics() {
     revenue: {
       title: 'Revenue by Period',
       description: 'Track monthly revenue trends to understand seasonality and campaign lift.',
-      insight: `Peak revenue: $${topRevenueMonth.revenue.toLocaleString()} in ${topRevenueMonth.month}.`,
+      insight: `Peak revenue: €${topRevenueMonth.revenue.toLocaleString('fr-FR')} in ${topRevenueMonth.month}.`,
     },
     repeat: {
       title: 'Repeat Customer Rate',
@@ -104,7 +104,7 @@ function ReportsAnalytics() {
     },
     { 
       label: 'YTD Revenue', 
-      value: `$${totalRevenue.toLocaleString()}`, 
+      value: `€${totalRevenue.toLocaleString('fr-FR')}`, 
       helper: `${topRevenueMonth.month} led revenue`,
       icon: <MoneyIcon />,
       color: '#764ba2',

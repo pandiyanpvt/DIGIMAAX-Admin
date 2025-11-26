@@ -10,8 +10,7 @@ export interface HeaderImage {
 }
 
 export interface CreateHeaderImagePayload {
-  image?: File
-  img_url?: string
+  image: File
   order_no: number
   is_active?: boolean
 }
@@ -19,7 +18,6 @@ export interface CreateHeaderImagePayload {
 export interface UpdateHeaderImagePayload {
   id: number
   image?: File
-  img_url?: string
   order_no?: number
   is_active?: boolean
 }
@@ -64,18 +62,13 @@ export async function getHeaderImagesByOrder(min: number, max: number): Promise<
 export async function createHeaderImage(payload: CreateHeaderImagePayload): Promise<HeaderImage> {
   try {
     const formData = new FormData()
-    if (payload.image) {
-      formData.append('image', payload.image)
-    }
-    if (payload.img_url) {
-      formData.append('img_url', payload.img_url)
-    }
+    formData.append('image', payload.image)
     formData.append('order_no', payload.order_no.toString())
-    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active.toString())
+    formData.append('is_active', payload.is_active ? 'true' : 'false')
 
     const { data } = await apiClient.post('/api/header-images/save', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { message, headerImage }
@@ -91,13 +84,12 @@ export async function updateHeaderImage(payload: UpdateHeaderImagePayload): Prom
   try {
     const formData = new FormData()
     if (payload.image) formData.append('image', payload.image)
-    if (payload.img_url !== undefined) formData.append('img_url', payload.img_url)
     if (payload.order_no !== undefined) formData.append('order_no', payload.order_no.toString())
-    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active.toString())
+    if (payload.is_active !== undefined) formData.append('is_active', payload.is_active ? 'true' : 'false')
 
     const { data } = await apiClient.put(`/api/header-images/update/${payload.id}`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': undefined as any,
       },
     })
     // Backend returns { message, headerImage }

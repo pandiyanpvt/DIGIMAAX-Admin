@@ -46,6 +46,10 @@ interface CategoryDisplay {
   isActive: boolean
   productCount: number
   createdAt: string
+  customizationColor: boolean
+  customizationSize: boolean
+  customizationText: boolean
+  customizationImage: boolean
 }
 
 // Map backend data to frontend display format
@@ -57,6 +61,11 @@ const mapBackendToFrontend = (backendCategory: ProductCategory): CategoryDisplay
   isActive: backendCategory.is_active ?? true,
   productCount: backendCategory.product_count ?? 0,
   createdAt: backendCategory.created_at ? new Date(backendCategory.created_at).toISOString().split('T')[0] : '',
+  // Convert 0/1 to boolean (backend sends as number)
+  customizationColor: Boolean(backendCategory.customization_color ?? 0),
+  customizationSize: Boolean(backendCategory.customization_size ?? 0),
+  customizationText: Boolean(backendCategory.customization_text ?? 0),
+  customizationImage: Boolean(backendCategory.customization_image ?? 0),
 })
 
 function ProductCategories() {
@@ -92,8 +101,7 @@ function ProductCategories() {
 
   const filteredCategories = categories.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.description && c.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      c.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleAdd = () => {
@@ -105,6 +113,10 @@ function ProductCategories() {
       isActive: true,
       productCount: 0,
       createdAt: '',
+      customizationColor: false,
+      customizationSize: false,
+      customizationText: false,
+      customizationImage: false,
     })
     setAddDialogOpen(true)
     setError(null)
@@ -138,10 +150,12 @@ function ProductCategories() {
           id: selectedCategory.id,
           name: selectedCategory.name,
           is_active: selectedCategory.isActive,
+          customization_color: selectedCategory.customizationColor,
+          customization_size: selectedCategory.customizationSize,
+          customization_text: selectedCategory.customizationText,
+          customization_image: selectedCategory.customizationImage,
         })
         const updatedCategory = mapBackendToFrontend(updated)
-        // Preserve description (frontend-only)
-        updatedCategory.description = selectedCategory.description
         setCategories(categories.map((c) => (c.id === selectedCategory.id ? updatedCategory : c)))
         setEditDialogOpen(false)
         setSuccessMessage('Category updated successfully!')
@@ -150,10 +164,12 @@ function ProductCategories() {
         const created = await createCategory({
           name: selectedCategory.name,
           is_active: selectedCategory.isActive,
+          customization_color: selectedCategory.customizationColor,
+          customization_size: selectedCategory.customizationSize,
+          customization_text: selectedCategory.customizationText,
+          customization_image: selectedCategory.customizationImage,
         })
         const newCategory = mapBackendToFrontend(created)
-        // Preserve description (frontend-only)
-        newCategory.description = selectedCategory.description
         setCategories([...categories, newCategory])
         setAddDialogOpen(false)
         setSuccessMessage('Category created successfully!')
@@ -263,7 +279,6 @@ function ProductCategories() {
             <TableHead>
               <TableRow>
                 <TableCell>Category</TableCell>
-                <TableCell>Description</TableCell>
                 <TableCell>Products</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
@@ -284,9 +299,6 @@ function ProductCategories() {
                         </Typography>
                       </Box>
                     </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{category.description}</Typography>
                   </TableCell>
                   <TableCell>
                     <Chip label={category.productCount} size="small" />
@@ -360,18 +372,6 @@ function ProductCategories() {
               />
               <TextField
                 fullWidth
-                label="Description (optional, frontend-only)"
-                value={selectedCategory.description || ''}
-                onChange={(e) =>
-                  setSelectedCategory({ ...selectedCategory, description: e.target.value })
-                }
-                multiline
-                rows={3}
-                sx={{ mb: 2 }}
-                helperText="Description is for frontend display only and is not saved to backend."
-              />
-              <TextField
-                fullWidth
                 label="Slug (auto-generated)"
                 value={selectedCategory.slug || selectedCategory.name.toLowerCase().replace(/\s+/g, '-')}
                 onChange={(e) => setSelectedCategory({ ...selectedCategory, slug: e.target.value })}
@@ -389,6 +389,58 @@ function ProductCategories() {
                   />
                 }
                 label="Active"
+                sx={{ mb: 2 }}
+              />
+              <Typography variant="subtitle2" sx={{ mb: 1.5, mt: 2, fontWeight: 600 }}>
+                Customization Options
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedCategory.customizationColor}
+                    onChange={(e) =>
+                      setSelectedCategory({ ...selectedCategory, customizationColor: e.target.checked })
+                    }
+                  />
+                }
+                label="Color Customization"
+                sx={{ mb: 1 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedCategory.customizationSize}
+                    onChange={(e) =>
+                      setSelectedCategory({ ...selectedCategory, customizationSize: e.target.checked })
+                    }
+                  />
+                }
+                label="Size Customization"
+                sx={{ mb: 1 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedCategory.customizationText}
+                    onChange={(e) =>
+                      setSelectedCategory({ ...selectedCategory, customizationText: e.target.checked })
+                    }
+                  />
+                }
+                label="Text Customization"
+                sx={{ mb: 1 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedCategory.customizationImage}
+                    onChange={(e) =>
+                      setSelectedCategory({ ...selectedCategory, customizationImage: e.target.checked })
+                    }
+                  />
+                }
+                label="Image Customization"
+                sx={{ mb: 1 }}
               />
             </Box>
           )}

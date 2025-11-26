@@ -21,6 +21,7 @@ export interface ContactMessage {
   serviceInterest?: string
   subject?: string
   message?: string
+  is_read?: number // 0 = unread, 1 = read
   created_at: string
   updated_at: string
   replies?: ContactReply[]
@@ -124,6 +125,18 @@ export async function deleteContactMessage(id: number): Promise<void> {
     await apiClient.delete(`/api/contact/delete/${id}`)
   } catch (error: any) {
     console.error('Error deleting contact message:', error)
+    throw error
+  }
+}
+
+// Mark contact message as read (admin only)
+export async function markContactAsRead(id: number): Promise<ContactMessage> {
+  try {
+    const { data } = await apiClient.put(`/api/contact/markAsRead/${id}`)
+    // Backend returns { message, contact }
+    return data?.contact || data
+  } catch (error: any) {
+    console.error('Error marking contact as read:', error)
     throw error
   }
 }

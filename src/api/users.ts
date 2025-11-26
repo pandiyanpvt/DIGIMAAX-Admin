@@ -96,10 +96,10 @@ export async function updateUser(payload: UpdateUserPayload): Promise<User> {
   }
 }
 
-// Create user (uses register endpoint)
+// Create user
 export async function createUser(payload: CreateUserPayload): Promise<User> {
   try {
-    const { data } = await apiClient.post('/api/user/register', payload)
+    const { data } = await apiClient.post('/api/user/addUser', payload)
     // Backend returns { message, user }
     return data?.user || data
   } catch (error: any) {

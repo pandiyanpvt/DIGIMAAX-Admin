@@ -179,7 +179,7 @@ function CartDetails() {
                   Total Cart Value
                 </Typography>
                 <Typography variant="h6" color="primary.main">
-                  ${totalValue.toFixed(2)}
+                  €{totalValue.toFixed(2)}
                 </Typography>
               </Box>
             </Box>
@@ -250,7 +250,7 @@ function CartDetails() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      ${cart.total.toFixed(2)}
+                      €{cart.total.toFixed(2)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -353,7 +353,7 @@ function CartDetails() {
                   <Typography variant="caption" color="text.secondary">
                     Total Value
                   </Typography>
-                  <Typography variant="h6">${selectedCart.total.toFixed(2)}</Typography>
+                  <Typography variant="h6">€{selectedCart.total.toFixed(2)}</Typography>
                 </Grid>
               </Grid>
 
@@ -375,8 +375,8 @@ function CartDetails() {
                       <TableRow key={item.id}>
                         <TableCell>{item.productName}</TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${item.price.toFixed(2)}</TableCell>
-                        <TableCell align="right">${item.subtotal.toFixed(2)}</TableCell>
+                        <TableCell align="right">€{item.price.toFixed(2)}</TableCell>
+                        <TableCell align="right">€{item.subtotal.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
@@ -384,7 +384,7 @@ function CartDetails() {
                         Total:
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        ${selectedCart.total.toFixed(2)}
+                        €{selectedCart.total.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableBody>

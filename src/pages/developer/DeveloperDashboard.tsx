@@ -72,7 +72,7 @@ const topServiceInsights = [
 const COLORS = ['#60a5fa', '#34d399', '#f472b6', '#facc15']
 
 const formatCurrency = (value: number) =>
-  `LKR ${value.toLocaleString('en-LK', { maximumFractionDigits: 0 })}`
+  `€${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 function DeveloperDashboard() {
   const dashboardKpis: KPI[] = useMemo(
@@ -103,7 +103,7 @@ function DeveloperDashboard() {
       },
       {
         title: 'Avg Cart Value',
-        value: 'LKR 182K',
+        value: '€182K',
         change: '+5.1% YoY',
         trend: 'up',
         icon: <InsightsIcon />,

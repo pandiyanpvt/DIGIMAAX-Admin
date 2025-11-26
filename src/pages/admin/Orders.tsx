@@ -289,7 +289,7 @@ function Orders() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          LKR {order.total.toFixed(2)}
+                          €{order.total.toFixed(2)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -383,7 +383,7 @@ function Orders() {
                   <Typography variant="caption" color="text.secondary">
                     Total Amount
                   </Typography>
-                  <Typography variant="h6">LKR {selectedOrder.total.toFixed(2)}</Typography>
+                  <Typography variant="h6">€{selectedOrder.total.toFixed(2)}</Typography>
                 </Box>
               </Box>
 
@@ -405,8 +405,8 @@ function Orders() {
                       <TableRow key={item.id}>
                         <TableCell>{item.productName}</TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">LKR {item.price.toFixed(2)}</TableCell>
-                        <TableCell align="right">LKR {item.subtotal.toFixed(2)}</TableCell>
+                        <TableCell align="right">€{item.price.toFixed(2)}</TableCell>
+                        <TableCell align="right">€{item.subtotal.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow>
@@ -414,7 +414,7 @@ function Orders() {
                         Total:
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        LKR {selectedOrder.total.toFixed(2)}
+                        €{selectedOrder.total.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableBody>

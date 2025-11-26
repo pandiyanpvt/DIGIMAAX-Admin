@@ -29,8 +29,9 @@ import {
   createGalleryImage,
   updateGalleryImage,
   deleteGalleryImage,
-  uploadGalleryImage,
   type GalleryImage,
+  type CreateGalleryPayload,
+  type UpdateGalleryPayload,
 } from '../../api/gallery'
 
 function GalleryManagement() {
@@ -49,6 +50,8 @@ function GalleryManagement() {
     is_active: true,
   })
 
+  const [refreshKey, setRefreshKey] = useState(0)
+
   // Fetch gallery images from backend
   useEffect(() => {
     const fetchMedia = async () => {
@@ -66,7 +69,7 @@ function GalleryManagement() {
     }
 
     fetchMedia()
-  }, [])
+  }, [refreshKey])
 
   const handleUpload = () => {
     setFormData({ name: '', description: '', img_url: '', is_active: true })
@@ -85,27 +88,29 @@ function GalleryManagement() {
     setEditDialogOpen(true)
   }
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    try {
-      setUploading(true)
-      setError(null)
-      const result = await uploadGalleryImage(file)
-      setFormData({ ...formData, img_url: result.url })
-      setSuccessMessage('Image uploaded successfully')
-    } catch (err: any) {
-      console.error('Error uploading image:', err)
-      setError(err?.response?.data?.message || 'Failed to upload image')
-    } finally {
-      setUploading(false)
-    }
+    // Store the file for later upload with form data
+    setSelectedFile(file)
+    // Create a preview URL
+    const previewUrl = URL.createObjectURL(file)
+    setFormData({ ...formData, img_url: previewUrl })
+    setSuccessMessage('Image selected successfully')
   }
 
   const handleSave = async () => {
-    if (!formData.name || !formData.img_url) {
-      setError('Name and image are required')
+    if (!formData.name) {
+      setError('Name is required')
+      return
+    }
+
+    // For new items, require image file
+    if (!selectedMedia && !selectedFile) {
+      setError('Please select an image')
       return
     }
 
@@ -115,34 +120,39 @@ function GalleryManagement() {
 
       if (selectedMedia) {
         // Update existing image
-        const payload: any = {
+        const payload: UpdateGalleryPayload = {
           id: selectedMedia.id,
           name: formData.name,
           description: formData.description || undefined,
-          img_url: formData.img_url,
           is_active: formData.is_active,
         }
 
-        const updated = await updateGalleryImage(payload)
-        setMedia(media.map((m) => (m.id === updated.id ? updated : m)))
+        // Only include image if a new file was selected
+        if (selectedFile) {
+          payload.image = selectedFile
+        }
+
+        await updateGalleryImage(payload)
         setSuccessMessage('Gallery item updated successfully')
         setEditDialogOpen(false)
+        setRefreshKey((k) => k + 1) // Refresh gallery list
       } else {
-        // Create new image
-        const payload: any = {
+        // Create new image - file is required
+        const payload: CreateGalleryPayload = {
+          image: selectedFile!,
           name: formData.name,
           description: formData.description || undefined,
-          img_url: formData.img_url,
           is_active: formData.is_active,
         }
 
-        const created = await createGalleryImage(payload)
-        setMedia([...media, created])
+        await createGalleryImage(payload)
         setSuccessMessage('Gallery item created successfully')
         setUploadDialogOpen(false)
+        setRefreshKey((k) => k + 1) // Refresh gallery list
       }
       setFormData({ name: '', description: '', img_url: '', is_active: true })
       setSelectedMedia(null)
+      setSelectedFile(null)
     } catch (err: any) {
       console.error('Error saving gallery item:', err)
       setError(err?.response?.data?.message || 'Failed to save gallery item')
@@ -294,16 +304,6 @@ function GalleryManagement() {
               sx={{ mb: 2 }}
               disabled={uploading}
             />
-            <TextField
-              fullWidth
-              label="Image URL"
-              value={formData.img_url}
-              onChange={(e) => setFormData({ ...formData, img_url: e.target.value })}
-              placeholder="Enter image URL or upload a file"
-              sx={{ mb: 2 }}
-              disabled={uploading}
-              required
-            />
             <Button
               variant="outlined"
               component="label"
@@ -312,7 +312,7 @@ function GalleryManagement() {
               sx={{ mb: 2 }}
               disabled={uploading}
             >
-              {uploading ? 'Uploading...' : 'Upload Image'}
+              {uploading ? 'Uploading...' : 'Upload Image *'}
               <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
             </Button>
             {formData.img_url && (
@@ -353,7 +353,7 @@ function GalleryManagement() {
             onClick={handleSave}
             variant="contained"
             sx={{ backgroundColor: 'primary.main' }}
-            disabled={uploading || !formData.name || !formData.img_url}
+            disabled={uploading || !formData.name || !selectedFile}
           >
             {uploading ? 'Saving...' : 'Save'}
           </Button>
@@ -384,16 +384,6 @@ function GalleryManagement() {
               sx={{ mb: 2 }}
               disabled={uploading}
             />
-            <TextField
-              fullWidth
-              label="Image URL"
-              value={formData.img_url}
-              onChange={(e) => setFormData({ ...formData, img_url: e.target.value })}
-              placeholder="Enter image URL or upload a file"
-              sx={{ mb: 2 }}
-              disabled={uploading}
-              required
-            />
             <Button
               variant="outlined"
               component="label"
@@ -402,7 +392,7 @@ function GalleryManagement() {
               sx={{ mb: 2 }}
               disabled={uploading}
             >
-              {uploading ? 'Uploading...' : 'Upload Image'}
+              {uploading ? 'Uploading...' : 'Change Image'}
               <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
             </Button>
             {formData.img_url && (
@@ -443,7 +433,7 @@ function GalleryManagement() {
             onClick={handleSave}
             variant="contained"
             sx={{ backgroundColor: 'primary.main' }}
-            disabled={uploading || !formData.name || !formData.img_url}
+            disabled={uploading || !formData.name}
           >
             {uploading ? 'Saving...' : 'Save'}
           </Button>
