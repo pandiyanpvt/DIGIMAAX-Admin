@@ -182,12 +182,6 @@ function AdminsManagement() {
     }
   }
 
-  // Get role name for display
-  const getRoleName = (userRoleId: number): string => {
-    const role = userRoles.find(r => r.id === userRoleId)
-    return role?.name || 'Admin'
-  }
-
   // Check if user is superadmin/developer
   const isSuperAdmin = (userRoleId: number): boolean => {
     return userRoleId === 3 // Developer role ID

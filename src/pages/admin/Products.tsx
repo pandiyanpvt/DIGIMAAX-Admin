@@ -114,7 +114,7 @@ function Products() {
   const [addAdditionalImagesDialogOpen, setAddAdditionalImagesDialogOpen] = useState(false)
   const [selectedProductForImage, setSelectedProductForImage] = useState<ProductDisplay | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [imagesToDelete, setImagesToDelete] = useState<number[]>([])
+  const [, setImagesToDelete] = useState<number[]>([])
 
   // Fetch products and categories on mount
   useEffect(() => {
