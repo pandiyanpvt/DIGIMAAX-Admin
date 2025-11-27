@@ -23,7 +23,7 @@ import {
   MenuItem,
   Divider,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -290,7 +290,7 @@ function ServicesManagement() {
         <DialogTitle>{editingService ? 'Edit Service' : 'Add New Service'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Service Name"
@@ -299,7 +299,7 @@ function ServicesManagement() {
                 required
               />
             </Grid>
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Tagline"
@@ -309,7 +309,7 @@ function ServicesManagement() {
                 required
               />
             </Grid>
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <FormControl fullWidth required>
                 <InputLabel>Service Type</InputLabel>
                 <Select
@@ -325,7 +325,7 @@ function ServicesManagement() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 multiline
@@ -338,7 +338,7 @@ function ServicesManagement() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Packages / Pricing</Typography>
@@ -362,7 +362,7 @@ function ServicesManagement() {
                     )}
                   </Box>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -372,7 +372,7 @@ function ServicesManagement() {
                         placeholder="e.g., Basic, Standard, Premium"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -382,7 +382,7 @@ function ServicesManagement() {
                         placeholder="e.g., 2 Cameras + DVR"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -397,7 +397,7 @@ function ServicesManagement() {
               ))}
             </Grid>
 
-            <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">What's Included</Typography>

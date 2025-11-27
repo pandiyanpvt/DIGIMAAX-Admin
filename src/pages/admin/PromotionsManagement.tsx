@@ -23,7 +23,7 @@ import {
   Select,
   MenuItem,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -254,16 +254,16 @@ function PromotionsManagement() {
       >
         <DialogTitle>{editingPromo ? 'Edit Promotion' : 'Create New Promotion'}</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
-            </Grid>
-            <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 multiline
@@ -272,8 +272,8 @@ function PromotionsManagement() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Start Date"
@@ -282,8 +282,8 @@ function PromotionsManagement() {
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="End Date"
@@ -292,8 +292,8 @@ function PromotionsManagement() {
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                 InputLabelProps={{ shrink: true }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth>
                 <InputLabel>Discount Type</InputLabel>
                 <Select
@@ -305,8 +305,8 @@ function PromotionsManagement() {
                   <MenuItem value="amount">Fixed Amount</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Discount Value"
@@ -314,8 +314,8 @@ function PromotionsManagement() {
                 value={formData.discountValue}
                 onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
               />
-            </Grid>
-            <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 label="Voucher Code"
@@ -332,8 +332,8 @@ function PromotionsManagement() {
                   ),
                 }}
               />
-            </Grid>
-          </Grid>
+                </Grid>
+                </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>

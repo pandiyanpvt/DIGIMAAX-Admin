@@ -23,7 +23,7 @@ import {
   MenuItem,
   Avatar,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -32,7 +32,7 @@ import {
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
 import { getCurrentUserRole, rolePermissions } from '../../constants/roles'
-import { getAllUsers, createUser, updateUser, deleteUser, type User } from '../../api/users'
+import { getAllUsers, updateUser, deleteUser, type User } from '../../api/users'
 import { registerAdmin } from '../../api/auth'
 import { getAllUserRoles } from '../../api/userRoles'
 import { Alert, CircularProgress } from '@mui/material'
@@ -93,7 +93,7 @@ function UsersManagement() {
       lastName: '',
       email: '',
       phoneNumber: '',
-      role: 'user',
+      userRoleId: 2,
       password: '',
     })
     setDialogOpen(true)
@@ -118,7 +118,7 @@ function UsersManagement() {
       
       if (editingUser) {
         // Update existing user
-        const updatedUser = await updateUser({
+        await updateUser({
           id: editingUser.id,
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -187,11 +187,6 @@ function UsersManagement() {
 
   const canManage = permissions.canManageUsers
 
-  // Get role name for display
-  const getRoleName = (userRoleId: number): string => {
-    const role = userRoles.find(r => r.id === userRoleId)
-    return role?.name || 'User'
-  }
 
   if (loading) {
     return (
@@ -319,23 +314,23 @@ function UsersManagement() {
           <DialogTitle>{editingUser ? 'Edit Shop Worker' : 'Add New Shop Worker'}</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="First Name"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Last Name"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
-              </Grid>
-              <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -343,16 +338,16 @@ function UsersManagement() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
-              </Grid>
-              <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Phone Number"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />
-              </Grid>
-              <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
                 <FormControl fullWidth>
                   <InputLabel>Role</InputLabel>
                   <Select
@@ -371,8 +366,8 @@ function UsersManagement() {
                       ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid item xs={12}>
+                </Grid>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label={editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
@@ -380,8 +375,8 @@ function UsersManagement() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
-              </Grid>
-            </Grid>
+                </Grid>
+                </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)}>Cancel</Button>

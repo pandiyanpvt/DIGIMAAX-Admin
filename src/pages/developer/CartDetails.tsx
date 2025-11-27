@@ -21,7 +21,6 @@ import {
 } from '@mui/material'
 import {
   Visibility as ViewIcon,
-  ShoppingCart as CartIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
@@ -302,7 +301,7 @@ function CartDetails() {
           {selectedCart && (
             <Box sx={{ mt: 2 }}>
               <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     User Name
                   </Typography>
@@ -310,13 +309,13 @@ function CartDetails() {
                     {selectedCart.userName}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Email
                   </Typography>
                   <Typography variant="body1">{selectedCart.userEmail}</Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Cart Status
                   </Typography>
@@ -327,13 +326,13 @@ function CartDetails() {
                     sx={{ mt: 0.5 }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Total Items
                   </Typography>
                   <Typography variant="body1">{selectedCart.itemCount}</Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Created At
                   </Typography>
@@ -341,7 +340,7 @@ function CartDetails() {
                     {new Date(selectedCart.createdAt).toLocaleString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant="caption" color="text.secondary">
                     Last Updated
                   </Typography>
@@ -349,7 +348,7 @@ function CartDetails() {
                     {new Date(selectedCart.updatedAt).toLocaleString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" color="text.secondary">
                     Total Value
                   </Typography>
