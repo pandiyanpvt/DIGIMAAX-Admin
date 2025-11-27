@@ -23,12 +23,11 @@ import {
   MenuItem,
   Avatar,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Person as PersonIcon,
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
@@ -116,7 +115,7 @@ function AdminsManagement() {
       
       if (editingAdmin) {
         // Update existing admin
-        const updatedAdmin = await updateUser({
+        await updateUser({
           id: editingAdmin.id,
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -256,7 +255,6 @@ function AdminsManagement() {
                 </TableRow>
               ) : (
                 admins.map((admin) => {
-                  const roleName = getRoleName(admin.userRoleId)
                   const isDev = isSuperAdmin(admin.userRoleId)
                   return (
                     <TableRow key={admin.id} hover>
@@ -343,7 +341,7 @@ function AdminsManagement() {
           <DialogTitle>{editingAdmin ? 'Edit Admin' : 'Add New Admin'}</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="First Name"
@@ -351,7 +349,7 @@ function AdminsManagement() {
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
                   label="Last Name"
@@ -359,7 +357,7 @@ function AdminsManagement() {
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -368,7 +366,7 @@ function AdminsManagement() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Phone Number"
@@ -376,7 +374,7 @@ function AdminsManagement() {
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <FormControl fullWidth>
                   <InputLabel>Role</InputLabel>
                   <Select
@@ -396,7 +394,7 @@ function AdminsManagement() {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label={editingAdmin ? 'New Password (leave blank to keep current)' : 'Password'}

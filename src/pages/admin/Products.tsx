@@ -71,7 +71,7 @@ interface ProductDisplay {
 // Map backend data to frontend display format
 const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
   // Find primary image or use first image
-  const primaryImage = backendProduct.images?.find(img => img.is_primary === 1) || backendProduct.images?.[0]
+  const primaryImage = backendProduct.images?.find((img: any) => img.is_primary === 1 || img.is_primary === true) || backendProduct.images?.[0]
   
   return {
     id: backendProduct.id,
@@ -82,7 +82,12 @@ const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
     price: typeof backendProduct.price === 'string' ? parseFloat(backendProduct.price) : (backendProduct.price || 0),
     stock: backendProduct.stock_quantity ?? 0,
     imageUrl: backendProduct.primary_image || primaryImage?.image_url || '',
-    allImages: backendProduct.images || [],
+    allImages: (backendProduct.images || []).map((img: any) => ({
+      id: img.id,
+      image_url: img.image_url,
+      is_primary: typeof img.is_primary === 'boolean' ? (img.is_primary ? 1 : 0) : (img.is_primary || 0),
+      sort_order: img.sort_order || 0,
+    })),
     isActive: backendProduct.is_active ?? true,
     createdAt: backendProduct.created_at ? new Date(backendProduct.created_at).toISOString().split('T')[0] : '',
     shortDesc: backendProduct.short_desc || '',
@@ -109,6 +114,7 @@ function Products() {
   const [addAdditionalImagesDialogOpen, setAddAdditionalImagesDialogOpen] = useState(false)
   const [selectedProductForImage, setSelectedProductForImage] = useState<ProductDisplay | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagesToDelete, setImagesToDelete] = useState<number[]>([])
 
   // Fetch products and categories on mount
   useEffect(() => {
@@ -454,7 +460,7 @@ function Products() {
     }
 
     // Validate max 10 images total (existing + new)
-    const existingCount = selectedProductForImage.allImages?.filter(img => img.is_primary === 0).length || 0
+    const existingCount = selectedProductForImage.allImages?.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length || 0
     if (existingCount + selectedAdditionalImages.length > 10) {
       setError(`Maximum 10 additional images allowed. You already have ${existingCount} image(s).`)
       return
@@ -990,14 +996,14 @@ function Products() {
           {selectedProductForImage && (
             <Box sx={{ mt: 2 }}>
               {/* Show existing additional images with delete option */}
-              {selectedProductForImage.allImages && selectedProductForImage.allImages.filter(img => img.is_primary === 0).length > 0 && (
+              {selectedProductForImage.allImages && selectedProductForImage.allImages.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length > 0 && (
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Existing Additional Images ({selectedProductForImage.allImages.filter(img => img.is_primary === 0).length}):
+                    Existing Additional Images ({selectedProductForImage.allImages.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length}):
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {selectedProductForImage.allImages
-                      .filter(img => img.is_primary === 0)
+                      .filter((img: any) => (img.is_primary === 0 || img.is_primary === false))
                       .map((img) => (
                         <Box key={img.id} sx={{ position: 'relative' }}>
                           <Box

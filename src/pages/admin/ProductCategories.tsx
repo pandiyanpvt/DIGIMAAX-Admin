@@ -58,7 +58,7 @@ const mapBackendToFrontend = (backendCategory: ProductCategory): CategoryDisplay
   name: backendCategory.name,
   description: '', // Not in backend, keep empty
   slug: backendCategory.name.toLowerCase().replace(/\s+/g, '-'), // Auto-generate from name
-  isActive: backendCategory.is_active ?? true,
+  isActive: Boolean(backendCategory.is_active ?? true),
   productCount: backendCategory.product_count ?? 0,
   createdAt: backendCategory.created_at ? new Date(backendCategory.created_at).toISOString().split('T')[0] : '',
   // Convert 0/1 to boolean (backend sends as number)

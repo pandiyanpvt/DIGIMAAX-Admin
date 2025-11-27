@@ -10,7 +10,7 @@ import {
   Divider,
   Alert,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Settings as SettingsIcon,
   Save as SaveIcon,
@@ -67,15 +67,15 @@ function SystemSettings() {
         </Typography>
         <Divider sx={{ mb: 3 }} />
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="Site Name"
               value={settings.siteName}
               onChange={(e) => handleChange('siteName', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="Site Email"
@@ -83,16 +83,16 @@ function SystemSettings() {
               value={settings.siteEmail}
               onChange={(e) => handleChange('siteEmail', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="Site Phone"
               value={settings.sitePhone}
               onChange={(e) => handleChange('sitePhone', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="Session Timeout (hours)"
@@ -100,8 +100,8 @@ function SystemSettings() {
               value={settings.sessionTimeout}
               onChange={(e) => handleChange('sessionTimeout', e.target.value)}
             />
-          </Grid>
-        </Grid>
+                </Grid>
+                </Grid>
 
         {/* Email Settings */}
         <Typography variant="h6" sx={{ mb: 2, mt: 3 }}>
@@ -109,31 +109,31 @@ function SystemSettings() {
         </Typography>
         <Divider sx={{ mb: 3 }} />
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="SMTP Host"
               value={settings.smtpHost}
               onChange={(e) => handleChange('smtpHost', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="SMTP Port"
               value={settings.smtpPort}
               onChange={(e) => handleChange('smtpPort', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="SMTP Username"
               value={settings.smtpUser}
               onChange={(e) => handleChange('smtpUser', e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12} sm={6}>
+                </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               label="SMTP Password"
@@ -141,8 +141,8 @@ function SystemSettings() {
               value={settings.smtpPassword}
               onChange={(e) => handleChange('smtpPassword', e.target.value)}
             />
-          </Grid>
-        </Grid>
+                </Grid>
+                </Grid>
 
         {/* Notification Settings */}
         <Typography variant="h6" sx={{ mb: 2, mt: 3 }}>

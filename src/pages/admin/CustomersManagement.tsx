@@ -19,7 +19,7 @@ import {
   Chip,
   Avatar,
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
+import { Grid } from '@mui/material'
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -231,34 +231,34 @@ function CustomersManagement() {
         <DialogContent>
           {selectedCustomer && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="h6">{selectedCustomer.name}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Email
                 </Typography>
                 <Typography variant="body1">{selectedCustomer.email}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Phone
                 </Typography>
                 <Typography variant="body1">{selectedCustomer.phone}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Total Bookings
                 </Typography>
                 <Typography variant="body1">{selectedCustomer.bookingsCount}</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" color="text.secondary">
                   Last Booking
                 </Typography>
                 <Typography variant="body1">{selectedCustomer.lastBookingDate}</Typography>
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Typography variant="caption" color="text.secondary">
                   Vehicles
                 </Typography>
@@ -267,8 +267,8 @@ function CustomersManagement() {
                     <Chip key={idx} label={vehicle} size="small" />
                   ))}
                 </Box>
-              </Grid>
-            </Grid>
+                </Grid>
+                </Grid>
           )}
         </DialogContent>
         <DialogActions>
@@ -292,7 +292,7 @@ function CustomersManagement() {
         <DialogContent>
           {selectedCustomer && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Name"
@@ -302,7 +302,7 @@ function CustomersManagement() {
                   }
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Email"
@@ -312,7 +312,7 @@ function CustomersManagement() {
                   }
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   label="Phone"
@@ -321,8 +321,8 @@ function CustomersManagement() {
                     setSelectedCustomer({ ...selectedCustomer, phone: e.target.value })
                   }
                 />
-              </Grid>
-            </Grid>
+                </Grid>
+                </Grid>
           )}
         </DialogContent>
         <DialogActions>

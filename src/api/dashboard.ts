@@ -1,4 +1,3 @@
-import apiClient from './client'
 import { getAllOrders } from './orders'
 import { getAllProducts } from './products'
 import { getAllUsers } from './users'
@@ -30,26 +29,27 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   try {
     // Since backend doesn't have a dedicated dashboard endpoint,
     // we'll aggregate data from multiple endpoints
-    const [orders, products, users] = await Promise.all([
-      getAllOrders().catch(() => []),
+    const [ordersResponse, products, users] = await Promise.all([
+      getAllOrders().catch(() => ({ orders: [] })),
       getAllProducts().catch(() => []),
       getAllUsers().catch(() => []),
     ])
 
+    const orders = Array.isArray(ordersResponse) ? ordersResponse : ordersResponse.orders || []
     const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const totalCustomers = users.filter(user => user.roleName !== 'Admin').length
+    const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.total_amount || order.total || 0), 0)
+    const totalCustomers = users.filter((user: any) => user.roleName !== 'Admin').length
     const totalProducts = products.length
-    const pendingOrders = orders.filter(order => order.status === 'pending').length
-    const completedOrders = orders.filter(order => order.status === 'delivered').length
+    const pendingOrders = orders.filter((order: any) => order.status === 'pending').length
+    const completedOrders = orders.filter((order: any) => order.status === 'delivered').length
     
     const currentMonth = new Date().getMonth()
     const currentYear = new Date().getFullYear()
-    const monthlyOrders = orders.filter(order => {
+    const monthlyOrders = orders.filter((order: any) => {
       const orderDate = new Date(order.created_at)
       return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
     })
-    const monthlyRevenue = monthlyOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const monthlyRevenue = monthlyOrders.reduce((sum: number, order: any) => sum + (order.total_amount || order.total || 0), 0)
     
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
@@ -72,12 +72,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 // Get revenue data for charts
 export async function getRevenueData(months: number = 6): Promise<RevenueData[]> {
   try {
-    const orders = await getAllOrders().catch(() => [])
+    const ordersResponse = await getAllOrders().catch(() => ({ orders: [] }))
+    const orders = Array.isArray(ordersResponse) ? ordersResponse : ordersResponse.orders || []
     
     // Group orders by month
     const revenueByMonth: { [key: string]: { revenue: number; orders: number } } = {}
     
-    orders.forEach(order => {
+    orders.forEach((order: any) => {
       const date = new Date(order.created_at)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       
@@ -116,10 +117,11 @@ export async function getRevenueData(months: number = 6): Promise<RevenueData[]>
 // Get order status distribution
 export async function getOrderStatusData(): Promise<OrderStatusData[]> {
   try {
-    const orders = await getAllOrders().catch(() => [])
+    const ordersResponse = await getAllOrders().catch(() => ({ orders: [] }))
+    const orders = Array.isArray(ordersResponse) ? ordersResponse : ordersResponse.orders || []
     
     const statusCounts: { [key: string]: number } = {}
-    orders.forEach(order => {
+    orders.forEach((order: any) => {
       const status = order.status || 'unknown'
       statusCounts[status] = (statusCounts[status] || 0) + 1
     })

@@ -1,6 +1,5 @@
 // Pages Exports
 export * from './admin'
-export * from './user'
 export * from './developer'
 export { default as Login } from './auth/Login'
 export { default as Register } from './auth/Register'

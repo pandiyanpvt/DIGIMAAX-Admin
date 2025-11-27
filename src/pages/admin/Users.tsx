@@ -37,7 +37,6 @@ import {
   getAllUsers,
   createUser,
   getUserById,
-  getUsersByRole,
   type User,
   type CreateUserPayload,
 } from '../../api/users'
@@ -191,7 +190,7 @@ function Users() {
     }
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (_id: number) => {
     if (!window.confirm('Are you sure you want to delete this user?')) {
       return
     }
