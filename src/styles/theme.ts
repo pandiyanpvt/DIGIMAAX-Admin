@@ -2,11 +2,11 @@ import { createTheme } from '@mui/material/styles'
 
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#2196F3',
-      light: '#64B5F6',
-      dark: '#1976D2',
+      main: '#28045C',
+      light: '#3D0A6B',
+      dark: '#1A0238',
     },
     secondary: {
       main: '#FF4081',
@@ -14,12 +14,12 @@ export const theme = createTheme({
       dark: '#C2185B',
     },
     background: {
-      default: '#0A0A0F',
-      paper: '#1A1A2E',
+      default: '#ffffff',
+      paper: '#ffffff',
     },
     text: {
-      primary: '#FFFFFF',
-      secondary: '#B0B0B0',
+      primary: '#000000',
+      secondary: '#666666',
     },
   },
   typography: {
@@ -43,9 +43,9 @@ export const theme = createTheme({
           padding: '12px 24px',
         },
         contained: {
-          boxShadow: '0 4px 14px 0 rgba(33, 150, 243, 0.3)',
+          boxShadow: '0 4px 14px 0 rgba(40, 4, 92, 0.3)',
           '&:hover': {
-            boxShadow: '0 6px 20px 0 rgba(33, 150, 243, 0.4)',
+            boxShadow: '0 6px 20px 0 rgba(40, 4, 92, 0.4)',
           },
         },
       },
@@ -54,9 +54,9 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          background: 'rgba(26, 26, 46, 0.8)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: '#ffffff',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
         },
       },
     },

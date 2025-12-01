@@ -25,7 +25,7 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
     <Box
       sx={{
         height: { xs: 64, md: 80 },
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -33,8 +33,8 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        backgroundColor: 'rgba(6, 11, 25, 0.8)',
-        backdropFilter: 'blur(10px)',
+        backgroundColor: '#ffffff',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
       }}
     >
       {/* Mobile Menu Toggle */}
@@ -42,7 +42,7 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
         <IconButton
           onClick={onMenuToggle}
           sx={{
-            color: '#fff',
+            color: '#000000',
             mr: 1,
           }}
         >
@@ -60,10 +60,7 @@ function AdminHeaderBar({ pageTitle, onMenuChange, canAccessSettings = true, onM
           variant="h5"
           sx={{
             fontWeight: 700,
-            background: 'linear-gradient(135deg, #7dd3fc 0%, #a5b4fc 50%, #f9a8d4 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: '#28045C',
             fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
             letterSpacing: '-0.02em',
           }}

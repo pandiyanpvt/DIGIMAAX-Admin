@@ -193,11 +193,9 @@ function AdminDashboard() {
       <Card
         sx={{
           borderRadius: { xs: 2, md: 4 },
-          backgroundColor: 'rgba(10, 15, 30, 0.85)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(59, 130, 246, 0.1)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          backgroundColor: '#ffffff',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
           p: { xs: 2, sm: 2.5, md: 3 },
         }}
       >
@@ -221,13 +219,14 @@ function AdminDashboard() {
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  background: `linear-gradient(145deg, rgba(15,23,42,0.95) 0%, ${metric.color}26 100%)`,
-                  border: '1px solid rgba(148, 163, 184, 0.15)',
+                  background: '#ffffff',
+                  border: `1px solid ${metric.color}33`,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   gap: 1.5,
-                  color: '#f8fafc',
+                  color: '#000000',
                   minHeight: 120,
                   width: '100%',
                 }}
@@ -237,7 +236,7 @@ function AdminDashboard() {
                     width: 48,
                     height: 48,
                     borderRadius: 1.5,
-                    backgroundColor: `${metric.color}1f`,
+                    backgroundColor: `${metric.color}15`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -254,7 +253,7 @@ function AdminDashboard() {
                   <Typography 
                     variant="overline" 
                     sx={{ 
-                      color: '#cbd5f5', 
+                      color: '#666666', 
                       display: 'block', 
                       letterSpacing: 0.5,
                       fontSize: '0.7rem',
@@ -269,7 +268,7 @@ function AdminDashboard() {
                     variant="h5" 
                     sx={{ 
                       fontWeight: 700, 
-                      color: '#f8fafc', 
+                      color: '#000000', 
                       lineHeight: 1.3, 
                       mb: 1,
                       fontSize: { xs: '1.25rem', sm: '1.5rem' },
@@ -311,37 +310,36 @@ function AdminDashboard() {
           <Card sx={{ 
             p: 2, 
             borderRadius: 3, 
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            border: '1px solid rgba(59, 130, 246, 0.15)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+            backgroundColor: '#ffffff',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
           }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#e2e8f0' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#000000' }}>
               Sales Trend (Last 30 Days)
             </Typography>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={salesGraphData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.12)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 0, 0, 0.1)" />
                 <XAxis 
                   dataKey="date" 
-                  stroke="#94a3b8"
+                  stroke="#666666"
                   angle={-45}
                   textAnchor="end"
                   height={60}
                   interval="preserveStartEnd"
                 />
                 <YAxis 
-                  stroke="#94a3b8"
+                  stroke="#666666"
                   tickFormatter={(value) => `€${(value / 1000).toFixed(0)}K`}
                 />
                 <Tooltip 
                   contentStyle={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid rgba(0, 0, 0, 0.2)',
                     borderRadius: 8,
-                    color: '#f8fafc',
+                    color: '#000000',
                     padding: '8px 12px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
                   }}
                   formatter={(value: any) => {
                     const formatted = value >= 1000000 
@@ -349,9 +347,9 @@ function AdminDashboard() {
                       : `€${(value / 1000).toFixed(0)}K`
                     return [formatted, 'Sales']
                   }}
-                  labelStyle={{ color: '#cbd5f5', marginBottom: '4px' }}
+                  labelStyle={{ color: '#666666', marginBottom: '4px' }}
                 />
-                <Legend wrapperStyle={{ color: '#cbd5f5' }} />
+                <Legend wrapperStyle={{ color: '#000000' }} />
                 <Line 
                   type="monotone" 
                   dataKey="amount" 
@@ -369,18 +367,16 @@ function AdminDashboard() {
             sx={{
               p: 2,
               borderRadius: 3,
-              backgroundColor: 'rgba(15, 23, 42, 0.85)',
-              backdropFilter: 'blur(18px)',
-              WebkitBackdropFilter: 'blur(18px)',
-              border: '1px solid rgba(236, 72, 153, 0.15)',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+              backgroundColor: '#ffffff',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               display: 'flex',
               flexDirection: 'column',
               minHeight: 350,
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#e2e8f0' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#000000' }}>
                 Unread Contact Messages {unreadMessages.length > 0 && `(${unreadMessages.length})`}
               </Typography>
               {unreadMessages.length > 0 && (
@@ -423,7 +419,7 @@ function AdminDashboard() {
                         gap: 1.5,
                         p: 1.5,
                         borderRadius: 2,
-                        border: '1px solid rgba(148, 163, 184, 0.15)',
+                        border: '1px solid rgba(0, 0, 0, 0.1)',
                         backgroundColor: 'rgba(236, 72, 153, 0.05)',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
@@ -454,7 +450,7 @@ function AdminDashboard() {
                           variant="body2"
                           sx={{
                             fontWeight: 600,
-                            color: '#e2e8f0',
+                            color: '#000000',
                             mb: 0.25,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -466,7 +462,7 @@ function AdminDashboard() {
                         <Typography
                           variant="caption"
                           sx={{
-                            color: '#94a3b8',
+                            color: '#666666',
                             display: 'block',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -488,7 +484,7 @@ function AdminDashboard() {
                             height: 20,
                           }}
                         />
-                        <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                        <Typography variant="caption" sx={{ color: '#666666', fontSize: '0.7rem' }}>
                           {new Date(message.created_at).toLocaleDateString()}
                         </Typography>
                       </Box>
@@ -498,7 +494,7 @@ function AdminDashboard() {
               </Box>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 300 }}>
-                <Typography variant="body2" sx={{ color: '#94a3b8', textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#666666', textAlign: 'center' }}>
                   No unread messages
                 </Typography>
               </Box>

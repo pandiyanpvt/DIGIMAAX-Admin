@@ -199,29 +199,6 @@ function ProductCategories() {
     }
   }
 
-  const handleToggleActive = async (id: number) => {
-    const category = categories.find((c) => c.id === id)
-    if (!category) return
-
-    const updatedCategory = { ...category, isActive: !category.isActive }
-    try {
-      setError(null)
-      const updated = await updateCategory({
-        id,
-        is_active: updatedCategory.isActive,
-      })
-      const mappedUpdated = mapBackendToFrontend(updated)
-      // Preserve description (frontend-only)
-      mappedUpdated.description = category.description
-      setCategories(categories.map((c) => (c.id === id ? mappedUpdated : c)))
-    } catch (err: any) {
-      console.error('Error toggling category status:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to update category status')
-      // Revert on error
-      setCategories(categories.map((c) => (c.id === id ? category : c)))
-    }
-  }
-
   return (
     <PageContainer sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
       <Card sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderRadius: 2 }}>
@@ -280,7 +257,6 @@ function ProductCategories() {
               <TableRow>
                 <TableCell>Category</TableCell>
                 <TableCell>Products</TableCell>
-                <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -302,18 +278,6 @@ function ProductCategories() {
                   </TableCell>
                   <TableCell>
                     <Chip label={category.productCount} size="small" />
-                  </TableCell>
-                  <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={category.isActive}
-                          onChange={() => handleToggleActive(category.id)}
-                          size="small"
-                        />
-                      }
-                      label={category.isActive ? 'Active' : 'Inactive'}
-                    />
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
