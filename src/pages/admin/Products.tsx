@@ -88,9 +88,17 @@ const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
       is_primary: typeof img.is_primary === 'boolean' ? (img.is_primary ? 1 : 0) : (img.is_primary || 0),
       sort_order: img.sort_order || 0,
     })),
-    isActive: backendProduct.is_active ?? true,
+    isActive: (() => {
+      const isActiveValue = backendProduct.is_active
+      if (isActiveValue === undefined || isActiveValue === null) return true
+      if (typeof isActiveValue === 'boolean') return isActiveValue
+      if (typeof isActiveValue === 'number') return isActiveValue === 1
+      if (typeof isActiveValue === 'string') return isActiveValue === '1' || isActiveValue === 'true'
+      return true
+    })(),
     createdAt: backendProduct.created_at ? new Date(backendProduct.created_at).toISOString().split('T')[0] : '',
     shortDesc: backendProduct.short_desc || '',
+    description: backendProduct.description || '',
     isFeatured: backendProduct.is_featured ?? false,
   }
 }
@@ -102,6 +110,7 @@ function Products() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -110,8 +119,7 @@ function Products() {
   const [selectedAdditionalImages, setSelectedAdditionalImages] = useState<File[]>([])
   const [refreshKey, setRefreshKey] = useState(0)
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null)
-  const [changePrimaryImageDialogOpen, setChangePrimaryImageDialogOpen] = useState(false)
-  const [addAdditionalImagesDialogOpen, setAddAdditionalImagesDialogOpen] = useState(false)
+  const [imageManagementDialogOpen, setImageManagementDialogOpen] = useState(false)
   const [selectedProductForImage, setSelectedProductForImage] = useState<ProductDisplay | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [, setImagesToDelete] = useState<number[]>([])
@@ -145,11 +153,33 @@ function Products() {
     fetchData()
   }, [refreshKey])
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredProducts = products.filter((p) => {
+    // Category filter
+    const matchesCategory = categoryFilter === 'all' || p.categoryId === categoryFilter
+    
+    // Search filter
+    let matchesSearch = true
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const searchNum = parseFloat(searchTerm)
+      const isNumeric = !isNaN(searchNum) && !isNaN(parseFloat(searchTerm))
+      
+      matchesSearch = (
+        p.name.toLowerCase().includes(searchLower) ||
+        p.title.toLowerCase().includes(searchLower) ||
+        p.category.toLowerCase().includes(searchLower) ||
+        (p.description && p.description.toLowerCase().includes(searchLower)) ||
+        (p.shortDesc && p.shortDesc.toLowerCase().includes(searchLower)) ||
+        (p.badge && p.badge.toLowerCase().includes(searchLower)) ||
+        (isNumeric && (
+          p.price.toString().includes(searchTerm) ||
+          p.stock.toString().includes(searchTerm)
+        ))
+      )
+    }
+    
+    return matchesCategory && matchesSearch
+  })
 
   const handleAdd = () => {
     setSelectedProduct({
@@ -164,6 +194,7 @@ function Products() {
       isActive: true,
       createdAt: '',
       shortDesc: '',
+      description: '',
       isFeatured: false,
     })
     setSelectedFile(null)
@@ -353,26 +384,6 @@ function Products() {
     }
   }
 
-  const handleToggleActive = async (id: number) => {
-    const product = products.find((p) => p.id === id)
-    if (!product) return
-
-    const updatedProduct = { ...product, isActive: !product.isActive }
-    try {
-      setError(null)
-      const updated = await updateProduct({
-        id,
-        is_active: updatedProduct.isActive,
-      })
-      const mappedUpdated = mapBackendToFrontend(updated)
-      setProducts(products.map((p) => (p.id === id ? mappedUpdated : p)))
-    } catch (err: any) {
-      console.error('Error toggling product status:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to update product status')
-      // Revert on error
-      setProducts(products.map((p) => (p.id === id ? product : p)))
-    }
-  }
 
   const handleDeleteImage = async (imageId: number) => {
     if (!window.confirm('Are you sure you want to delete this image?')) {
@@ -402,63 +413,35 @@ function Products() {
     }
   }
 
-  const handleChangePrimaryImage = async (product: ProductDisplay) => {
+  const handleManageImages = async (product: ProductDisplay) => {
     try {
       setError(null)
       const fullProduct = await getProductById(product.id)
       const mappedProduct = mapBackendToFrontend(fullProduct)
       setSelectedProductForImage(mappedProduct)
       setSelectedFile(null)
-      setChangePrimaryImageDialogOpen(true)
-    } catch (err: any) {
-      console.error('Error fetching product details:', err)
-      setError(err?.response?.data?.error?.message || 'Failed to load product details')
-    }
-  }
-
-  const handleAddAdditionalImages = async (product: ProductDisplay) => {
-    try {
-      setError(null)
-      const fullProduct = await getProductById(product.id)
-      const mappedProduct = mapBackendToFrontend(fullProduct)
-      setSelectedProductForImage(mappedProduct)
       setSelectedAdditionalImages([])
-      setAddAdditionalImagesDialogOpen(true)
+      setImageManagementDialogOpen(true)
     } catch (err: any) {
       console.error('Error fetching product details:', err)
       setError(err?.response?.data?.error?.message || 'Failed to load product details')
     }
   }
 
-  const handleSavePrimaryImage = async () => {
-    if (!selectedProductForImage || !selectedFile) {
-      setError('Please select an image')
+  const handleSaveImages = async () => {
+    if (!selectedProductForImage) {
+      setError('Product not selected')
       return
     }
 
-    try {
-      setUploadingImage(true)
-      setError(null)
-      await changePrimaryImage(selectedProductForImage.id, selectedFile)
-      setChangePrimaryImageDialogOpen(false)
-      setSelectedFile(null)
-      setSelectedProductForImage(null)
-      setSuccessMessage('Primary image changed successfully')
-      setRefreshKey((k) => k + 1)
-    } catch (err: any) {
-      console.error('Error changing primary image:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to change primary image')
-    } finally {
-      setUploadingImage(false)
-    }
-  }
-
-  const handleSaveAdditionalImages = async () => {
-    if (!selectedProductForImage || selectedAdditionalImages.length === 0) {
-      setError('Please select at least one image')
+    // Check if there are any changes
+    if (!selectedFile && selectedAdditionalImages.length === 0) {
+      setError('Please make at least one change')
       return
     }
 
+    // Validate additional images if any
+    if (selectedAdditionalImages.length > 0) {
     // Validate max 10 images total (existing + new)
     const existingCount = selectedProductForImage.allImages?.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length || 0
     if (existingCount + selectedAdditionalImages.length > 10) {
@@ -472,20 +455,36 @@ function Products() {
     if (totalSize > maxSize) {
       setError('Total size of additional images must not exceed 20MB')
       return
+      }
     }
 
     try {
       setUploadingImage(true)
       setError(null)
+      
+      // Save primary image if changed
+      if (selectedFile) {
+        await changePrimaryImage(selectedProductForImage.id, selectedFile)
+      }
+      
+      // Save additional images if any
+      if (selectedAdditionalImages.length > 0) {
       await addAdditionalImages(selectedProductForImage.id, selectedAdditionalImages)
-      setAddAdditionalImagesDialogOpen(false)
+      }
+      
+      setImageManagementDialogOpen(false)
+      setSelectedFile(null)
       setSelectedAdditionalImages([])
       setSelectedProductForImage(null)
-      setSuccessMessage(`${selectedAdditionalImages.length} additional image(s) added successfully`)
+      
+      const messages = []
+      if (selectedFile) messages.push('Primary image changed')
+      if (selectedAdditionalImages.length > 0) messages.push(`${selectedAdditionalImages.length} additional image(s) added`)
+      setSuccessMessage(messages.join(' and ') + ' successfully')
       setRefreshKey((k) => k + 1)
     } catch (err: any) {
-      console.error('Error adding additional images:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to add additional images')
+      console.error('Error saving images:', err)
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to save images')
     } finally {
       setUploadingImage(false)
     }
@@ -527,10 +526,33 @@ function Products() {
           size="small"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 3, minWidth: { xs: '100%', sm: 300 } }}
+          sx={{ mb: 2, minWidth: { xs: '100%', sm: 300 } }}
           fullWidth={false}
           disabled={loading}
         />
+
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Filter by Category</InputLabel>
+            <Select
+              value={categoryFilter}
+              label="Filter by Category"
+              onChange={(e) => setCategoryFilter(e.target.value as number | 'all')}
+              disabled={loading}
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Typography variant="body2" color="text.secondary">
+            Total: {filteredProducts.length} product(s)
+          </Typography>
+        </Box>
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
@@ -548,11 +570,9 @@ function Products() {
             <TableHead>
               <TableRow>
                 <TableCell>Product</TableCell>
-                <TableCell>SKU</TableCell>
                 <TableCell>Category</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Stock</TableCell>
-                <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -590,19 +610,11 @@ function Products() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      ID: {product.id}
-                      {product.allImages && product.allImages.length > 0 && (
-                        <> • {product.allImages.length} img</>
-                      )}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
                     <Chip label={product.category} size="small" />
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      €{typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(String(product.price || 0)).toFixed(2)}
+                      €{(typeof product.price === 'number' ? product.price : parseFloat(String(product.price || 0))).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -613,55 +625,50 @@ function Products() {
                     />
                   </TableCell>
                   <TableCell>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={product.isActive}
-                          onChange={() => handleToggleActive(product.id)}
-                          size="small"
-                        />
-                      }
-                      label={product.isActive ? 'Active' : 'Inactive'}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEdit(product)}
-                          color="primary"
-                          title="Edit Product"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(product.id)}
-                          color="error"
-                          title="Delete Product"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleChangePrimaryImage(product)}
-                          sx={{ fontSize: '0.7rem', minWidth: 'auto', px: 1 }}
-                        >
-                          Change Image
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleAddAdditionalImages(product)}
-                          sx={{ fontSize: '0.7rem', minWidth: 'auto', px: 1 }}
-                        >
-                          Add Images
-                        </Button>
-                      </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(product)}
+                        color="primary"
+                        title="Edit Product"
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'primary.main',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(product.id)}
+                        color="error"
+                        title="Delete Product"
+                        sx={{
+                          '&:hover': {
+                            backgroundColor: 'error.main',
+                            color: 'white',
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<UploadIcon />}
+                        onClick={() => handleManageImages(product)}
+                        sx={{
+                          fontSize: '0.75rem',
+                          minWidth: 'auto',
+                          px: 1.5,
+                          py: 0.5,
+                          textTransform: 'none',
+                        }}
+                      >
+                        Images
+                      </Button>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -727,20 +734,31 @@ function Products() {
                 fullWidth
                 label="Price"
                 type="number"
-                value={selectedProduct.price}
-                onChange={(e) =>
-                  setSelectedProduct({ ...selectedProduct, price: parseFloat(e.target.value) || 0 })
-                }
+                inputProps={{ min: 0, step: 0.01 }}
+                value={selectedProduct.price === 0 ? '' : selectedProduct.price}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setSelectedProduct({
+                    ...selectedProduct,
+                    price: value === '' ? 0 : parseFloat(value) || 0,
+                  })
+                }}
                 sx={{ mb: 2 }}
+                required
               />
               <TextField
                 fullWidth
                 label="Stock"
                 type="number"
-                value={selectedProduct.stock}
-                onChange={(e) =>
-                  setSelectedProduct({ ...selectedProduct, stock: parseInt(e.target.value) || 0 })
-                }
+                inputProps={{ min: 0 }}
+                value={selectedProduct.stock === 0 ? '' : selectedProduct.stock}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setSelectedProduct({
+                    ...selectedProduct,
+                    stock: value === '' ? 0 : parseInt(value) || 0,
+                  })
+                }}
                 sx={{ mb: 2 }}
               />
               <TextField
@@ -752,6 +770,17 @@ function Products() {
                 }
                 multiline
                 rows={2}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                value={selectedProduct.description || ''}
+                onChange={(e) =>
+                  setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                }
+                multiline
+                rows={4}
                 sx={{ mb: 2 }}
               />
               {/* Image uploads only for CREATE, not for UPDATE */}
@@ -898,21 +927,26 @@ function Products() {
         </DialogActions>
       </Dialog>
 
-      {/* Change Primary Image Dialog */}
+      {/* Image Management Dialog */}
       <Dialog
-        open={changePrimaryImageDialogOpen}
+        open={imageManagementDialogOpen}
         onClose={() => {
-          setChangePrimaryImageDialogOpen(false)
+          setImageManagementDialogOpen(false)
           setSelectedFile(null)
+          setSelectedAdditionalImages([])
           setSelectedProductForImage(null)
         }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Change Primary Image</DialogTitle>
+        <DialogTitle>Manage Product Images</DialogTitle>
         <DialogContent>
           {selectedProductForImage && (
             <Box sx={{ mt: 2 }}>
+              {/* Primary Image Section */}
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Primary Image
+              </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Current primary image:
               </Typography>
@@ -935,10 +969,10 @@ function Products() {
                 component="label"
                 startIcon={<UploadIcon />}
                 fullWidth
-                sx={{ mb: 2 }}
+                sx={{ mb: 3 }}
                 disabled={uploadingImage}
               >
-                {uploadingImage ? 'Uploading...' : 'Select New Primary Image *'}
+                {uploadingImage ? 'Uploading...' : 'Change Primary Image'}
                 <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
               </Button>
               {selectedFile && (
@@ -951,55 +985,20 @@ function Products() {
                     maxHeight: 200,
                     objectFit: 'contain',
                     borderRadius: 1,
-                    mb: 2,
+                    mb: 3,
                   }}
                 />
               )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setChangePrimaryImageDialogOpen(false)
-              setSelectedFile(null)
-              setSelectedProductForImage(null)
-            }}
-            disabled={uploadingImage}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSavePrimaryImage}
-            variant="contained"
-            disabled={uploadingImage || !selectedFile}
-            sx={{ backgroundColor: 'primary.main' }}
-          >
-            {uploadingImage ? <CircularProgress size={20} /> : 'Change Image'}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Add Additional Images Dialog */}
-      <Dialog
-        open={addAdditionalImagesDialogOpen}
-        onClose={() => {
-          setAddAdditionalImagesDialogOpen(false)
-          setSelectedAdditionalImages([])
-          setSelectedProductForImage(null)
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add Additional Images</DialogTitle>
-        <DialogContent>
-          {selectedProductForImage && (
-            <Box sx={{ mt: 2 }}>
+              {/* Additional Images Section */}
+              <Typography variant="subtitle2" sx={{ mb: 1, mt: 2, fontWeight: 600 }}>
+                Additional Images
+              </Typography>
               {/* Show existing additional images with delete option */}
               {selectedProductForImage.allImages && selectedProductForImage.allImages.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Existing Additional Images ({selectedProductForImage.allImages.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length}):
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Existing additional images ({selectedProductForImage.allImages.filter((img: any) => (img.is_primary === 0 || img.is_primary === false)).length}):
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {selectedProductForImage.allImages
@@ -1046,8 +1045,8 @@ function Products() {
                   </Box>
                 </Box>
               )}
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Add New Images (Max 10 total, Max 20MB)
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Add new images (Max 10 total, Max 20MB)
               </Typography>
               <Button
                 variant="outlined"
@@ -1110,7 +1109,8 @@ function Products() {
         <DialogActions>
           <Button
             onClick={() => {
-              setAddAdditionalImagesDialogOpen(false)
+              setImageManagementDialogOpen(false)
+              setSelectedFile(null)
               setSelectedAdditionalImages([])
               setSelectedProductForImage(null)
             }}
@@ -1119,12 +1119,12 @@ function Products() {
             Cancel
           </Button>
           <Button
-            onClick={handleSaveAdditionalImages}
+            onClick={handleSaveImages}
             variant="contained"
-            disabled={uploadingImage || selectedAdditionalImages.length === 0}
+            disabled={uploadingImage || (!selectedFile && selectedAdditionalImages.length === 0)}
             sx={{ backgroundColor: 'primary.main' }}
           >
-            {uploadingImage ? <CircularProgress size={20} /> : 'Add Images'}
+            {uploadingImage ? <CircularProgress size={20} /> : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

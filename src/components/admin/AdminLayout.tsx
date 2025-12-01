@@ -195,18 +195,8 @@ function AdminLayout() {
       sx={{ 
         display: 'flex', 
         minHeight: '100vh', 
-        background: 'linear-gradient(180deg, #29085D 0%, #1A0540 50%, #0D0220 100%)',
+        background: '#ffffff',
         position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.18) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255, 64, 129, 0.18) 0%, transparent 50%)',
-          pointerEvents: 'none',
-        },
       }}
     >
       <AdminSidebar 

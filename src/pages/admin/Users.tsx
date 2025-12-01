@@ -24,12 +24,15 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  InputAdornment,
 } from '@mui/material'
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
 import { getCurrentUserRole } from '../../constants/roles'
@@ -53,6 +56,8 @@ function Users() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [roleFilter, setRoleFilter] = useState<number | 'all'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const currentRole = getCurrentUserRole()
 
   // Check if user is developer (superadmin role)
@@ -96,10 +101,23 @@ function Users() {
     fetchData()
   }, [isDeveloper])
 
-  // Filter users by role
-  const filteredUsers = roleFilter === 'all'
-    ? users
-    : users.filter((user) => user.userRoleId === roleFilter)
+  // Filter users by role and search term
+  const filteredUsers = users.filter((user) => {
+    // Role filter
+    const matchesRole = roleFilter === 'all' || user.userRoleId === roleFilter
+    
+    // Search filter
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = !searchTerm || 
+      user.firstName.toLowerCase().includes(searchLower) ||
+      user.lastName.toLowerCase().includes(searchLower) ||
+      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchLower)) ||
+      (user.roleName && user.roleName.toLowerCase().includes(searchLower))
+    
+    return matchesRole && matchesSearch
+  })
 
   const handleAdd = () => {
     setSelectedUser(null)
@@ -111,6 +129,7 @@ function Users() {
       password: '',
       userRoleId: userRoles.length > 0 ? userRoles[0].id : 1,
     })
+    setShowPassword(false)
     setAddDialogOpen(true)
     setError(null)
   }
@@ -128,6 +147,7 @@ function Users() {
         password: '',
         userRoleId: fullUser.userRoleId,
       })
+      setShowPassword(false)
       setEditDialogOpen(true)
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to fetch user details')
@@ -254,7 +274,16 @@ function Users() {
           </Box>
         ) : (
           <>
-            <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              placeholder="Search users..."
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ mb: 2, minWidth: { xs: '100%', sm: 300 } }}
+              fullWidth={false}
+              disabled={loading}
+            />
+            <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <InputLabel>Filter by Role</InputLabel>
                 <Select
@@ -365,6 +394,7 @@ function Users() {
           setAddDialogOpen(false)
           setEditDialogOpen(false)
           setSelectedUser(null)
+          setShowPassword(false)
           setError(null)
         }}
         maxWidth="sm"
@@ -432,13 +462,32 @@ function Users() {
             <TextField
               fullWidth
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               sx={{ mb: 2 }}
               required={!selectedUser}
               disabled={saving}
               helperText={selectedUser ? 'Leave empty to keep current password' : 'Required for new users'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      disabled={saving}
+                      sx={{
+                        color: 'action.active',
+                        '&:hover': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
           </Box>
         </DialogContent>
@@ -448,6 +497,7 @@ function Users() {
               setAddDialogOpen(false)
               setEditDialogOpen(false)
               setSelectedUser(null)
+              setShowPassword(false)
               setError(null)
             }}
             disabled={saving}

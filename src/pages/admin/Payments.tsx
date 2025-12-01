@@ -165,7 +165,7 @@ function Payments() {
               Payments Management
             </Typography>
             <Typography variant="h6" color="primary">
-              Total Revenue: €{totalRevenue.toFixed(2)}
+              Total Revenue: €{totalRevenue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Typography>
           </Box>
           <Button
@@ -240,7 +240,7 @@ function Payments() {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      €{payment.amount.toFixed(2)}
+                      €{payment.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -304,7 +304,7 @@ function Payments() {
                   <Typography variant="caption" color="text.secondary">
                     Amount
                   </Typography>
-                  <Typography variant="h6">€{selectedPayment.amount.toFixed(2)}</Typography>
+                  <Typography variant="h6">€{selectedPayment.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">

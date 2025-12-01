@@ -64,11 +64,9 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
       sx={{
         width: { xs: 280, md: 260 },
         height: '100vh',
-        background: 'rgba(6, 11, 25, 0.72)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: '#28045C',
         borderRight: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 20px 60px rgba(2, 6, 23, 0.65)',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         pt: 4,
@@ -84,34 +82,6 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
         transition: 'transform 0.3s ease-in-out',
       }}
     >
-      {/* Glow accents */}
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: '-20%',
-            left: '10%',
-            width: '120%',
-            height: '40%',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.35), transparent 60%)',
-            filter: 'blur(12px)',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: '-30%',
-            right: '-10%',
-            width: '120%',
-            height: '45%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.3), transparent 65%)',
-            filter: 'blur(18px)',
-          },
-        }}
-      />
       {/* Logo */}
       <Box
         sx={{
@@ -179,16 +149,15 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
                   py: 1.5,
                   px: 2.5,
                   borderRadius: 2,
-                  background:
-                    isActive
-                      ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.15))'
-                      : 'rgba(255,255,255,0.02)',
+                  background: isActive
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'transparent',
                   border: isActive 
-                    ? '1px solid rgba(102, 126, 234, 0.4)' 
-                    : '1px solid rgba(255,255,255,0.04)',
+                    ? '1px solid rgba(255, 255, 255, 0.3)' 
+                    : '1px solid transparent',
                   cursor: 'pointer',
                   boxShadow: isActive 
-                    ? '0 4px 16px rgba(102, 126, 234, 0.3)' 
+                    ? '0 4px 16px rgba(0, 0, 0, 0.2)' 
                     : 'none',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
@@ -200,7 +169,7 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
                     top: 0,
                     bottom: 0,
                     width: isActive ? '4px' : '0px',
-                    background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+                    background: '#FFFFFF',
                     borderRadius: '0 4px 4px 0',
                     transition: 'width 0.3s ease',
                   },
@@ -216,7 +185,7 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
               >
                 <Box
                   sx={{
-                    color: isActive ? 'primary.main' : 'rgba(255, 255, 255, 0.7)',
+                    color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -251,8 +220,8 @@ function AdminSidebar({ selectedMenu, onMenuChange, visibleMenuIds, open = true,
                       width: 6,
                       height: 6,
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      boxShadow: '0 0 8px rgba(102, 126, 234, 0.6)',
+                      background: '#FFFFFF',
+                      boxShadow: '0 0 8px rgba(255, 255, 255, 0.6)',
                       animation: 'pulse 2s ease-in-out infinite',
                       '@keyframes pulse': {
                         '0%, 100%': {

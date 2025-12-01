@@ -103,6 +103,12 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
     
     // Always send these fields with defaults if not provided
     formData.append('short_desc', payload.short_desc || payload.title)
+    if (payload.description) {
+      formData.append('description', payload.description)
+    }
+    if (payload.badge) {
+      formData.append('badge', payload.badge)
+    }
     formData.append('in_stock', (payload.in_stock !== undefined ? payload.in_stock : true) ? 'true' : 'false')
     formData.append('stock_quantity', (payload.stock_quantity !== undefined ? payload.stock_quantity : 0).toString())
     formData.append('is_featured', (payload.is_featured !== undefined ? payload.is_featured : false) ? 'true' : 'false')

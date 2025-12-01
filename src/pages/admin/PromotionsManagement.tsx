@@ -193,7 +193,7 @@ function PromotionsManagement() {
                   <TableCell>
                     {promo.discountType === 'percent'
                       ? `${promo.discountValue}%`
-                      : `€${promo.discountValue}`}
+                      : `€${typeof promo.discountValue === 'number' ? promo.discountValue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : promo.discountValue}`}
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
