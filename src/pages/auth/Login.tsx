@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { 
   Box, 
   Button, 
@@ -19,7 +19,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { loginAdmin, loginDeveloper } from '../../api/auth'
 import { getAllUserRoles } from '../../api/userRoles'
 import { getCurrentUserRole } from '../../constants/roles'
-import { getAdminAuthToken, clearAdminAuthToken } from '../../api/client'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -30,43 +29,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [autoLoggingIn, setAutoLoggingIn] = useState(false)
-
-  // Auto-login if "Remember Me" was checked and token exists
-  // Also redirect if user is already authenticated (has active session)
-  useEffect(() => {
-    const checkAutoLogin = async () => {
-      try {
-        const authData = getAdminAuthToken()
-        if (authData?.token) {
-          // Auto-login if "Remember Me" was checked (persists across browser sessions)
-          // OR if user has an active session (token exists in sessionStorage)
-          const hasRememberMe = authData?.rememberMe === true
-          const hasActiveSession = sessionStorage.getItem('adminAuth') !== null
-          
-          if (hasRememberMe || hasActiveSession) {
-            setAutoLoggingIn(true)
-            // Verify token is still valid by checking user role
-            const role = getCurrentUserRole()
-            if (role && role !== 'user') {
-              // Token is valid, redirect to dashboard
-              navigate('/admin-dashboard', { replace: true })
-              window.dispatchEvent(new CustomEvent('admin:navigate', { detail: 'dashboard' }))
-            } else {
-              // Token is invalid or user doesn't have access, clear it
-              clearAdminAuthToken()
-              setAutoLoggingIn(false)
-            }
-          }
-        }
-      } catch (err) {
-        // If auto-login fails, just clear the token and show login form
-        clearAdminAuthToken()
-        setAutoLoggingIn(false)
-      }
-    }
-    checkAutoLogin()
-  }, [navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,7 +44,7 @@ export default function Login() {
       
       // Try admin login first (for admin role)
       try {
-        loginResult = await loginAdmin({ email: email.trim(), password }, rememberMe)
+        loginResult = await loginAdmin({ email: email.trim(), password })
       } catch (adminError: any) {
         const errorMessage = adminError?.response?.data?.message || adminError?.message || ''
         
@@ -91,7 +53,7 @@ export default function Login() {
             errorMessage.includes('Invalid credentials or not an admin')) {
           try {
             // Try developer login for superadmin/developer role
-            loginResult = await loginDeveloper({ email: email.trim(), password }, rememberMe)
+            loginResult = await loginDeveloper({ email: email.trim(), password })
           } catch (devError: any) {
             // Both admin and developer login failed - show the most specific error
             const devErrorMessage = devError?.response?.data?.message || devError?.message || ''
@@ -111,7 +73,7 @@ export default function Login() {
         } else if (errorMessage.includes('Invalid credentials')) {
           // Invalid credentials - try developer login as fallback (user might be a developer)
           try {
-            loginResult = await loginDeveloper({ email: email.trim(), password }, rememberMe)
+            loginResult = await loginDeveloper({ email: email.trim(), password })
           } catch (devError: any) {
             // Both failed - show credentials error
             throw new Error('Invalid email or password. Please check your credentials and try again.')
@@ -119,7 +81,7 @@ export default function Login() {
         } else {
           // Other admin login error - try developer login as fallback
           try {
-            loginResult = await loginDeveloper({ email: email.trim(), password }, rememberMe)
+            loginResult = await loginDeveloper({ email: email.trim(), password })
           } catch (devError: any) {
             // Both failed - show the original admin error
             throw adminError
@@ -149,7 +111,7 @@ export default function Login() {
         if (role === 'user') {
           setError('Access denied. This panel is only for administrators and developers.')
           // Clear auth token
-          clearAdminAuthToken()
+          localStorage.removeItem('adminAuth')
           return
         }
 
@@ -164,23 +126,6 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Show loading state during auto-login
-  if (autoLoggingIn) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#ffffff',
-        }}
-      >
-        <Typography>Logging you in...</Typography>
-      </Box>
-    )
   }
 
   return (
