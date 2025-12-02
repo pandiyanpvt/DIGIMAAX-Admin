@@ -26,7 +26,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Connection errors are handled silently in production
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('Network Error')) {
+      console.error('API Connection Error: Backend server is not running or unreachable.')
+      console.error('Please ensure your backend server is running on:', baseURL)
+    }
     return Promise.reject(error)
   }
 )

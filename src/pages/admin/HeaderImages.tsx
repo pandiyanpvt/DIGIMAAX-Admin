@@ -63,7 +63,7 @@ function HeaderImages() {
         const data = await getAllHeaderImages()
         setImages(data)
       } catch (err: any) {
-('Error fetching header images:', err)
+        console.error('Error fetching header images:', err)
         setError(err?.response?.data?.message || 'Failed to fetch header images')
       } finally {
         setLoading(false)
@@ -141,7 +141,7 @@ function HeaderImages() {
       setSelectedImage(null)
       setSelectedFile(null)
     } catch (err: any) {
-('Error saving header image:', err)
+      console.error('Error saving header image:', err)
       setError(err?.response?.data?.message || 'Failed to save header image')
     } finally {
       setUploading(false)
@@ -159,7 +159,7 @@ function HeaderImages() {
       setImages(images.filter((img) => img.id !== id))
       setSuccessMessage('Header image deleted successfully')
     } catch (err: any) {
-('Error deleting header image:', err)
+      console.error('Error deleting header image:', err)
       setError(err?.response?.data?.message || 'Failed to delete header image')
     }
   }

@@ -47,7 +47,7 @@ function UserLogs() {
       setTotalPages(response.pagination?.total_pages || 1)
       setTotalItems(response.pagination?.total_items || 0)
     } catch (err: any) {
-('Error fetching user logs:', err)
+      console.error('Error fetching user logs:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to fetch user logs')
     } finally {
       setLoading(false)

@@ -77,7 +77,7 @@ function UsersManagement() {
         setUserRoles(roles)
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to fetch users')
-('Error fetching users:', err)
+        console.error('Error fetching users:', err)
       } finally {
         setLoading(false)
       }
@@ -164,7 +164,7 @@ function UsersManagement() {
       })
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to save user')
-('Error saving user:', err)
+      console.error('Error saving user:', err)
     }
   }
 
@@ -180,7 +180,7 @@ function UsersManagement() {
         setUsers(shopWorkers)
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
-('Error deleting user:', err)
+        console.error('Error deleting user:', err)
       }
     }
   }

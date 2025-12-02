@@ -61,7 +61,7 @@ function GalleryManagement() {
         const data = await getAllGalleryImages()
         setMedia(data)
       } catch (err: any) {
-('Error fetching gallery images:', err)
+        console.error('Error fetching gallery images:', err)
         setError(err?.response?.data?.message || 'Failed to fetch gallery images')
       } finally {
         setLoading(false)
@@ -154,7 +154,7 @@ function GalleryManagement() {
       setSelectedMedia(null)
       setSelectedFile(null)
     } catch (err: any) {
-('Error saving gallery item:', err)
+      console.error('Error saving gallery item:', err)
       setError(err?.response?.data?.message || 'Failed to save gallery item')
     } finally {
       setUploading(false)
@@ -172,7 +172,7 @@ function GalleryManagement() {
       setMedia(media.filter((m) => m.id !== id))
       setSuccessMessage('Gallery item deleted successfully')
     } catch (err: any) {
-('Error deleting gallery item:', err)
+      console.error('Error deleting gallery item:', err)
       setError(err?.response?.data?.message || 'Failed to delete gallery item')
     }
   }

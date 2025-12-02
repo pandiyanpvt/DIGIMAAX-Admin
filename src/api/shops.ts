@@ -37,7 +37,7 @@ export async function getAllShops(): Promise<Shop[]> {
     const { data } = await apiClient.get('/api/shops/getAll')
     return Array.isArray(data) ? data : []
   } catch (error: any) {
-('Error fetching shops:', error)
+    console.error('Error fetching shops:', error)
     throw error
   }
 }
@@ -48,7 +48,7 @@ export async function getShopById(id: number): Promise<Shop> {
     const { data } = await apiClient.get(`/api/shops/getByID/${id}`)
     return data
   } catch (error: any) {
-('Error fetching shop:', error)
+    console.error('Error fetching shop:', error)
     throw error
   }
 }
@@ -59,7 +59,7 @@ export async function createShop(payload: CreateShopPayload): Promise<Shop> {
     const { data } = await apiClient.post('/api/shops/save', payload)
     return data
   } catch (error: any) {
-('Error creating shop:', error)
+    console.error('Error creating shop:', error)
     throw error
   }
 }
@@ -77,7 +77,7 @@ export async function updateShop(payload: UpdateShopPayload): Promise<Shop> {
     })
     return data
   } catch (error: any) {
-('Error updating shop:', error)
+    console.error('Error updating shop:', error)
     throw error
   }
 }
@@ -87,7 +87,7 @@ export async function deleteShop(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/shops/delete/${id}`)
   } catch (error: any) {
-('Error deleting shop:', error)
+    console.error('Error deleting shop:', error)
     throw error
   }
 }

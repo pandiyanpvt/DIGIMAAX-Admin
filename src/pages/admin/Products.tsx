@@ -143,7 +143,7 @@ function Products() {
         setProducts(mappedProducts)
         setCategories(backendCategories)
       } catch (err: any) {
-('Error fetching data:', err)
+        console.error('Error fetching data:', err)
         setError(err?.response?.data?.error?.message || err?.message || 'Failed to load products')
       } finally {
         setLoading(false)
@@ -216,7 +216,7 @@ function Products() {
       setEditDialogOpen(true)
       setSuccessMessage(null)
     } catch (err: any) {
-('Error fetching product details:', err)
+      console.error('Error fetching product details:', err)
       // Fallback to using the product we already have
       setSelectedProduct({ ...product })
       setSelectedFile(null)
@@ -361,7 +361,7 @@ function Products() {
       setSelectedAdditionalImages([])
       setImagesToDelete([])
     } catch (err: any) {
-('Error saving product:', err)
+      console.error('Error saving product:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to save product')
     } finally {
       setSaving(false)
@@ -379,7 +379,7 @@ function Products() {
       setProducts(products.filter((p) => p.id !== id))
       setSuccessMessage('Product deleted successfully!')
     } catch (err: any) {
-('Error deleting product:', err)
+      console.error('Error deleting product:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete product')
     }
   }
@@ -406,7 +406,7 @@ function Products() {
       setRefreshKey((k) => k + 1)
       setSuccessMessage('Image deleted successfully')
     } catch (err: any) {
-('Error deleting image:', err)
+      console.error('Error deleting image:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete image')
     } finally {
       setDeletingImageId(null)
@@ -423,7 +423,7 @@ function Products() {
       setSelectedAdditionalImages([])
       setImageManagementDialogOpen(true)
     } catch (err: any) {
-('Error fetching product details:', err)
+      console.error('Error fetching product details:', err)
       setError(err?.response?.data?.error?.message || 'Failed to load product details')
     }
   }
@@ -483,7 +483,7 @@ function Products() {
       setSuccessMessage(messages.join(' and ') + ' successfully')
       setRefreshKey((k) => k + 1)
     } catch (err: any) {
-('Error saving images:', err)
+      console.error('Error saving images:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to save images')
     } finally {
       setUploadingImage(false)

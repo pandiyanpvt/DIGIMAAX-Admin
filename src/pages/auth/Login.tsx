@@ -132,11 +132,13 @@ export default function Login() {
       // Fetch user roles from backend after successful login
       try {
         const userRoles = await getAllUserRoles()
+        console.log('User roles fetched:', userRoles)
         // Store user roles in localStorage for later use if needed
         if (userRoles && userRoles.length > 0) {
           localStorage.setItem('userRoles', JSON.stringify(userRoles))
         }
       } catch (roleError: any) {
+        console.warn('Could not fetch user roles:', roleError?.response?.data?.message || roleError?.message)
         // Don't block login if role fetch fails
       }
       

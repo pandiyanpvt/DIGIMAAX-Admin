@@ -60,7 +60,7 @@ export async function getUserOrders(params?: { status?: string; page?: number; l
     }
     return { orders: Array.isArray(data) ? data : [] }
   } catch (error: any) {
-('Error fetching user orders:', error)
+    console.error('Error fetching user orders:', error)
     throw error
   }
 }
@@ -78,7 +78,7 @@ export async function getAllOrders(params?: { status?: string; page?: number; li
     }
     return { orders: Array.isArray(data) ? data : [] }
   } catch (error: any) {
-('Error fetching orders:', error)
+    console.error('Error fetching orders:', error)
     throw error
   }
 }
@@ -90,7 +90,7 @@ export async function getOrderById(id: number): Promise<Order> {
     // Backend returns { success: true, data: order }
     return data?.data || data
   } catch (error: any) {
-('Error fetching order:', error)
+    console.error('Error fetching order:', error)
     throw error
   }
 }
@@ -116,7 +116,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     const { data } = await apiClient.post('/api/orders', payload)
     return data
   } catch (error: any) {
-('Error creating order:', error)
+    console.error('Error creating order:', error)
     throw error
   }
 }
@@ -133,7 +133,7 @@ export async function updateOrderStatus(id: number, payload: UpdateOrderStatusPa
     // Backend returns { success: true, data: order }
     return data?.data || data
   } catch (error: any) {
-('Error updating order status:', error)
+    console.error('Error updating order status:', error)
     throw error
   }
 }
@@ -148,7 +148,7 @@ export async function cancelOrder(id: number, payload?: CancelOrderPayload): Pro
     const { data } = await apiClient.post(`/api/orders/${id}/cancel`, payload || {})
     return data
   } catch (error: any) {
-('Error cancelling order:', error)
+    console.error('Error cancelling order:', error)
     throw error
   }
 }

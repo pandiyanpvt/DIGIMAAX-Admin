@@ -41,7 +41,7 @@ export async function getCart(): Promise<Cart> {
     const { data } = await apiClient.get('/api/cart')
     return data
   } catch (error: any) {
-('Error fetching cart:', error)
+    console.error('Error fetching cart:', error)
     throw error
   }
 }
@@ -52,7 +52,7 @@ export async function getCartByUserId(userId: number): Promise<Cart> {
     const { data } = await apiClient.get(`/api/cart/user/${userId}`)
     return data
   } catch (error: any) {
-('Error fetching cart by user ID:', error)
+    console.error('Error fetching cart by user ID:', error)
     throw error
   }
 }
@@ -63,7 +63,7 @@ export async function addToCart(payload: AddToCartPayload): Promise<CartItem> {
     const { data } = await apiClient.post('/api/cart/items', payload)
     return data
   } catch (error: any) {
-('Error adding item to cart:', error)
+    console.error('Error adding item to cart:', error)
     throw error
   }
 }
@@ -74,7 +74,7 @@ export async function updateCartItem(itemId: number, payload: UpdateCartItemPayl
     const { data } = await apiClient.put(`/api/cart/items/${itemId}`, payload)
     return data
   } catch (error: any) {
-('Error updating cart item:', error)
+    console.error('Error updating cart item:', error)
     throw error
   }
 }
@@ -84,7 +84,7 @@ export async function removeCartItem(itemId: number): Promise<void> {
   try {
     await apiClient.delete(`/api/cart/items/${itemId}`)
   } catch (error: any) {
-('Error removing cart item:', error)
+    console.error('Error removing cart item:', error)
     throw error
   }
 }
@@ -94,7 +94,7 @@ export async function clearCart(): Promise<void> {
   try {
     await apiClient.delete('/api/cart')
   } catch (error: any) {
-('Error clearing cart:', error)
+    console.error('Error clearing cart:', error)
     throw error
   }
 }

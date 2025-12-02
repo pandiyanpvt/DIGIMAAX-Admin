@@ -86,7 +86,7 @@ function SocialMediaLinks() {
         const mappedLinks = backendLinks.map(mapBackendToFrontend)
         setLinks(mappedLinks)
       } catch (err: any) {
-('Error fetching social media links:', err)
+        console.error('Error fetching social media links:', err)
         setError(err?.response?.data?.message || err?.message || 'Failed to load social media links')
       } finally {
         setLoading(false)
@@ -129,6 +129,7 @@ function SocialMediaLinks() {
       setSuccessMessage('Social media link updated successfully!')
       setSelectedLink(null)
     } catch (err: any) {
+      console.error('Error saving social media link:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to save social media link')
     } finally {
       setSaving(false)

@@ -29,6 +29,7 @@ export async function getAllHeaderImages(): Promise<HeaderImage[]> {
     // Backend returns { message, count, headerImages }
     return Array.isArray(data?.headerImages) ? data.headerImages : (Array.isArray(data) ? data : [])
   } catch (error: any) {
+    console.error('Error fetching header images:', error)
     throw error
   }
 }
@@ -40,6 +41,7 @@ export async function getHeaderImageById(id: number): Promise<HeaderImage> {
     // Backend returns { message, headerImage }
     return data?.headerImage || data
   } catch (error: any) {
+    console.error('Error fetching header image:', error)
     throw error
   }
 }
@@ -51,6 +53,7 @@ export async function getHeaderImagesByOrder(min: number, max: number): Promise<
     // Backend returns { message, count, headerImages }
     return Array.isArray(data?.headerImages) ? data.headerImages : (Array.isArray(data) ? data : [])
   } catch (error: any) {
+    console.error('Error fetching header images:', error)
     throw error
   }
 }
@@ -71,6 +74,7 @@ export async function createHeaderImage(payload: CreateHeaderImagePayload): Prom
     // Backend returns { message, headerImage }
     return data?.headerImage || data
   } catch (error: any) {
+    console.error('Error creating header image:', error)
     throw error
   }
 }
@@ -91,6 +95,7 @@ export async function updateHeaderImage(payload: UpdateHeaderImagePayload): Prom
     // Backend returns { message, headerImage }
     return data?.headerImage || data
   } catch (error: any) {
+    console.error('Error updating header image:', error)
     throw error
   }
 }
@@ -100,6 +105,7 @@ export async function deleteHeaderImage(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/header-images/delete/${id}`)
   } catch (error: any) {
+    console.error('Error deleting header image:', error)
     throw error
   }
 }
@@ -110,6 +116,7 @@ export async function getHeaderImageByOrderNo(orderNo: number): Promise<HeaderIm
     const { data } = await apiClient.get(`/api/header-images/getByOrderNo/${orderNo}`)
     return data
   } catch (error: any) {
+    console.error('Error fetching header image by order number:', error)
     throw error
   }
 }
@@ -133,6 +140,7 @@ export async function uploadHeaderImage(image: File): Promise<{ url: string; pub
       height: data?.file?.height,
     }
   } catch (error: any) {
+    console.error('Error uploading header image:', error)
     throw error
   }
 }

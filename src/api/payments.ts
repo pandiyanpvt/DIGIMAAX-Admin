@@ -29,7 +29,7 @@ export async function createPayment(payload: CreatePaymentPayload): Promise<Paym
     const { data } = await apiClient.post('/api/payments', payload)
     return data
   } catch (error: any) {
-('Error creating payment:', error)
+    console.error('Error creating payment:', error)
     throw error
   }
 }
@@ -40,7 +40,7 @@ export async function getPaymentById(id: number): Promise<Payment> {
     const { data } = await apiClient.get(`/api/payments/${id}`)
     return data
   } catch (error: any) {
-('Error fetching payment:', error)
+    console.error('Error fetching payment:', error)
     throw error
   }
 }
@@ -51,7 +51,7 @@ export async function processRefund(paymentId: number, payload: ProcessRefundPay
     const { data } = await apiClient.post(`/api/payments/${paymentId}/refund`, payload)
     return data
   } catch (error: any) {
-('Error processing refund:', error)
+    console.error('Error processing refund:', error)
     throw error
   }
 }

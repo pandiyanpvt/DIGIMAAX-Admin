@@ -32,6 +32,7 @@ export async function getAllGalleryImages(): Promise<GalleryImage[]> {
     // Backend returns { message, count, galleryItems }
     return Array.isArray(data?.galleryItems) ? data.galleryItems : (Array.isArray(data) ? data : [])
   } catch (error: any) {
+    console.error('Error fetching gallery images:', error)
     throw error
   }
 }
@@ -43,6 +44,7 @@ export async function getGalleryImageById(id: number): Promise<GalleryImage> {
     // Backend returns { message, galleryItem }
     return data?.galleryItem || data
   } catch (error: any) {
+    console.error('Error fetching gallery image:', error)
     throw error
   }
 }
@@ -65,6 +67,7 @@ export async function createGalleryImage(payload: CreateGalleryPayload): Promise
     // Backend returns { message, galleryItem }
     return data?.galleryItem || data
   } catch (error: any) {
+    console.error('Error creating gallery image:', error)
     throw error
   }
 }
@@ -87,6 +90,7 @@ export async function updateGalleryImage(payload: UpdateGalleryPayload): Promise
     // Backend returns { message, galleryItem }
     return data?.galleryItem || data
   } catch (error: any) {
+    console.error('Error updating gallery image:', error)
     throw error
   }
 }
@@ -96,6 +100,7 @@ export async function deleteGalleryImage(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/gallery/delete/${id}`)
   } catch (error: any) {
+    console.error('Error deleting gallery image:', error)
     throw error
   }
 }
@@ -119,6 +124,7 @@ export async function uploadGalleryImage(image: File): Promise<{ url: string; pu
       height: data?.file?.height,
     }
   } catch (error: any) {
+    console.error('Error uploading gallery image:', error)
     throw error
   }
 }

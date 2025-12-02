@@ -33,7 +33,7 @@ export default function Register() {
         setUserRoles(roles.filter(role => role.is_active))
       } catch (err) {
         // If fetching roles fails (e.g., requires auth), use default
-('Could not fetch user roles, using default')
+        console.warn('Could not fetch user roles, using default')
       } finally {
         setLoadingRoles(false)
       }

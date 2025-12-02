@@ -64,6 +64,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       averageOrderValue,
     }
   } catch (error: any) {
+    console.error('Error fetching dashboard stats:', error)
     throw error
   }
 }
@@ -108,6 +109,7 @@ export async function getRevenueData(months: number = 6): Promise<RevenueData[]>
     
     return result
   } catch (error: any) {
+    console.error('Error fetching revenue data:', error)
     throw error
   }
 }
@@ -129,6 +131,7 @@ export async function getOrderStatusData(): Promise<OrderStatusData[]> {
       count,
     }))
   } catch (error: any) {
+    console.error('Error fetching order status data:', error)
     throw error
   }
 }

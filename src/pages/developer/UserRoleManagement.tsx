@@ -79,7 +79,7 @@ function UserRoleManagement() {
         }
         setUserCounts(counts)
       } catch (err: any) {
-('Error fetching roles:', err)
+        console.error('Error fetching roles:', err)
         setError(err?.response?.data?.message || err?.message || 'Failed to fetch user roles')
       } finally {
         setLoading(false)
@@ -154,6 +154,7 @@ function UserRoleManagement() {
       })
       setSelectedRole(null)
     } catch (err: any) {
+      console.error('Error saving role:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to save user role')
     } finally {
       setSaving(false)
@@ -174,6 +175,7 @@ function UserRoleManagement() {
       setUserCounts(newCounts)
       setSuccessMessage('User role deleted successfully!')
     } catch (err: any) {
+      console.error('Error deleting role:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to delete user role')
     }
   }

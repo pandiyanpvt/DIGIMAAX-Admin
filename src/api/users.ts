@@ -38,7 +38,7 @@ export async function getAllUsers(): Promise<User[]> {
     // Backend returns { message, count, users }
     return Array.isArray(data?.users) ? data.users : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-('Error fetching users:', error)
+    console.error('Error fetching users:', error)
     throw error
   }
 }
@@ -50,7 +50,7 @@ export async function getUserById(id: number): Promise<User> {
     // Backend returns { message, user }
     return data?.user || data
   } catch (error: any) {
-('Error fetching user:', error)
+    console.error('Error fetching user:', error)
     throw error
   }
 }
@@ -62,7 +62,7 @@ export async function getUserByEmail(email: string): Promise<User> {
     // Backend returns { message, user }
     return data?.user || data
   } catch (error: any) {
-('Error fetching user:', error)
+    console.error('Error fetching user:', error)
     throw error
   }
 }
@@ -74,7 +74,7 @@ export async function getUsersByRole(userRoleId: number): Promise<User[]> {
     // Backend returns { message, count, users }
     return Array.isArray(data?.users) ? data.users : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-('Error fetching users by role:', error)
+    console.error('Error fetching users by role:', error)
     throw error
   }
 }
@@ -91,7 +91,7 @@ export async function updateUser(payload: UpdateUserPayload): Promise<User> {
     })
     return data
   } catch (error: any) {
-('Error updating user:', error)
+    console.error('Error updating user:', error)
     throw error
   }
 }
@@ -103,7 +103,7 @@ export async function createUser(payload: CreateUserPayload): Promise<User> {
     // Backend returns { message, user }
     return data?.user || data
   } catch (error: any) {
-('Error creating user:', error)
+    console.error('Error creating user:', error)
     throw error
   }
 }
@@ -113,7 +113,7 @@ export async function deleteUser(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/user/delete/${id}`)
   } catch (error: any) {
-('Error deleting user:', error)
+    console.error('Error deleting user:', error)
     throw error
   }
 }
@@ -135,7 +135,7 @@ export async function getCurrentUserProfile(): Promise<User> {
     // Backend returns { message, user }
     return data?.user || data
   } catch (error: any) {
-('Error fetching current user profile:', error)
+    console.error('Error fetching current user profile:', error)
     throw error
   }
 }
@@ -166,7 +166,7 @@ export async function updateCurrentUserProfile(payload: UpdateCurrentUserProfile
     
     return updatedUser
   } catch (error: any) {
-('Error updating current user profile:', error)
+    console.error('Error updating current user profile:', error)
     throw error
   }
 }

@@ -29,7 +29,7 @@ export async function getAllSocialMediaLinks(): Promise<SocialMediaLink[]> {
     // Backend returns { message, count, socialMediaLinks }
     return Array.isArray(data?.socialMediaLinks) ? data.socialMediaLinks : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-('Error fetching social media links:', error)
+    console.error('Error fetching social media links:', error)
     throw error
   }
 }
@@ -41,7 +41,7 @@ export async function getSocialMediaLinkById(id: number): Promise<SocialMediaLin
     // Backend returns { message, socialMediaLink }
     return data?.socialMediaLink || data
   } catch (error: any) {
-('Error fetching social media link:', error)
+    console.error('Error fetching social media link:', error)
     throw error
   }
 }
@@ -53,7 +53,7 @@ export async function getSocialMediaLinkByType(socialMedia: string): Promise<Soc
     // Backend returns { message, count, socialMediaLinks }
     return Array.isArray(data?.socialMediaLinks) ? data.socialMediaLinks : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-('Error fetching social media link by type:', error)
+    console.error('Error fetching social media link by type:', error)
     throw error
   }
 }
@@ -65,7 +65,7 @@ export async function createSocialMediaLink(payload: CreateSocialMediaPayload): 
     // Backend returns { message, socialMediaLink }
     return data?.socialMediaLink || data
   } catch (error: any) {
-('Error creating social media link:', error)
+    console.error('Error creating social media link:', error)
     throw error
   }
 }
@@ -81,7 +81,7 @@ export async function updateSocialMediaLink(payload: UpdateSocialMediaPayload): 
     // Backend returns { message, socialMediaLink }
     return data?.socialMediaLink || data
   } catch (error: any) {
-('Error updating social media link:', error)
+    console.error('Error updating social media link:', error)
     throw error
   }
 }
@@ -91,7 +91,7 @@ export async function deleteSocialMediaLink(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/social-media/delete/${id}`)
   } catch (error: any) {
-('Error deleting social media link:', error)
+    console.error('Error deleting social media link:', error)
     throw error
   }
 }

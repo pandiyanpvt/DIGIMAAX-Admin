@@ -92,7 +92,7 @@ function Orders() {
         const transformedOrders = response.orders.map(transformOrder)
         setOrders(transformedOrders)
       } catch (err: any) {
-('Error fetching orders:', err)
+        console.error('Error fetching orders:', err)
         setError(err?.response?.data?.error?.message || 'Failed to fetch orders')
       } finally {
         setLoading(false)
@@ -118,7 +118,7 @@ function Orders() {
       setSelectedOrder(transformed)
       setViewDialogOpen(true)
     } catch (err: any) {
-('Error fetching order details:', err)
+      console.error('Error fetching order details:', err)
       setError(err?.response?.data?.error?.message || 'Failed to fetch order details')
       // Fallback to showing the order we already have
       setSelectedOrder(order)
@@ -136,7 +136,7 @@ function Orders() {
         setSelectedOrder({ ...selectedOrder, status: newStatus })
       }
     } catch (err: any) {
-('Error updating order status:', err)
+      console.error('Error updating order status:', err)
       setError(err?.response?.data?.error?.message || 'Failed to update order status')
     }
   }
