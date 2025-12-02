@@ -7,10 +7,10 @@ type AuthResponse = {
   message?: string
 }
 
-const persistSession = (data: AuthResponse, rememberMe: boolean = false) => {
+const persistSession = (data: AuthResponse) => {
   const token = data?.accessToken || data?.token
   if (token) {
-    setAdminAuthToken(token, data?.user || null, rememberMe)
+    setAdminAuthToken(token, data?.user || null)
   }
   return {
     token: token || null,
@@ -29,23 +29,23 @@ export async function registerAdmin(payload: { firstName: string; lastName: stri
   }
 }
 
-export async function loginAdmin(payload: { email: string; password: string }, rememberMe: boolean = false) {
+export async function loginAdmin(payload: { email: string; password: string }) {
   if (!payload.email || !payload.password) throw new Error('Email and password are required')
   
   try {
     const { data } = await apiClient.post<AuthResponse>('/api/user/adminLogin', payload)
-    return persistSession(data || {}, rememberMe)
+    return persistSession(data || {})
   } catch (error: any) {
     throw error
   }
 }
 
-export async function loginDeveloper(payload: { email: string; password: string }, rememberMe: boolean = false) {
+export async function loginDeveloper(payload: { email: string; password: string }) {
   if (!payload.email || !payload.password) throw new Error('Email and password are required')
   
   try {
     const { data } = await apiClient.post<AuthResponse>('/api/user/developerLogin', payload)
-    return persistSession(data || {}, rememberMe)
+    return persistSession(data || {})
   } catch (error: any) {
     throw error
   }
