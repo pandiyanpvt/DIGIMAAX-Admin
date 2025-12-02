@@ -6,13 +6,12 @@ import Logout from './pages/auth/Logout'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 import { getCurrentUserRole } from './constants/roles'
+import { getAdminAuthToken, clearAdminAuthToken } from './api/client'
 
 const isAuthenticated = () => {
   try {
-    const stored = localStorage.getItem('adminAuth')
-    if (!stored) return false
-    const { token } = JSON.parse(stored)
-    return Boolean(token)
+    const authData = getAdminAuthToken()
+    return Boolean(authData?.token)
   } catch {
     return false
   }
@@ -28,7 +27,7 @@ function ProtectedRoute({ children }: { children: ReactElement }) {
   // Block user role - only admin and developer can access
   if (role === 'user') {
     // Clear auth and redirect to login - user role not allowed
-    localStorage.removeItem('adminAuth')
+    clearAdminAuthToken()
     return <Navigate to="/login" replace />
   }
   // Admin and developer (superadmin) are allowed
