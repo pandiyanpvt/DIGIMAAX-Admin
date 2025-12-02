@@ -10,9 +10,7 @@ import {
   Link as MuiLink,
   InputAdornment,
   IconButton,
-  Fade,
-  Checkbox,
-  FormControlLabel
+  Fade
 } from '@mui/material'
 import { Person, Lock, Visibility, VisibilityOff } from '@mui/icons-material'
 import { Link, useNavigate } from 'react-router-dom'
@@ -25,7 +23,6 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -409,28 +406,7 @@ export default function Login() {
                     },
                   }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        sx={{
-                          color: '#3d0a6b',
-                          '&.Mui-checked': {
-                            color: '#3d0a6b',
-                          },
-                        }}
-                      />
-                    }
-                    label="Remember me"
-                    sx={{
-                      '& .MuiFormControlLabel-label': {
-                        fontSize: '0.875rem',
-                        color: '#374151',
-                      },
-                    }}
-                  />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 1 }}>
                   <MuiLink
                     component={Link}
                     to="/forgot-password"
