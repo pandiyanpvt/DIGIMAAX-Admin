@@ -47,7 +47,7 @@ export async function getUserLogs(params?: GetUserLogsParams): Promise<UserLogsR
     })
     return data.data
   } catch (error: any) {
-    console.error('Error fetching user logs:', error)
+('Error fetching user logs:', error)
     throw error
   }
 }

@@ -60,7 +60,7 @@ function AdminDashboard() {
         )
         setUnreadMessages(sortedUnread.slice(0, 5))
       } catch (err: any) {
-        console.error('Error fetching dashboard data:', err)
+('Error fetching dashboard data:', err)
         setError(err?.response?.data?.error?.message || err?.message || 'Failed to load dashboard data')
       } finally {
         setLoading(false)

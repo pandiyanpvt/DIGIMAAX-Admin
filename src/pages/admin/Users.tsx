@@ -91,7 +91,7 @@ function Users() {
         setUsers(usersData)
         setUserRoles(rolesData)
       } catch (err: any) {
-        console.error('Error fetching data:', err)
+('Error fetching data:', err)
         setError(err?.response?.data?.message || err?.message || 'Failed to fetch data')
       } finally {
         setLoading(false)
@@ -203,7 +203,7 @@ function Users() {
         })
       }
     } catch (err: any) {
-      console.error('Error saving user:', err)
+('Error saving user:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to save user')
     } finally {
       setSaving(false)
@@ -223,7 +223,7 @@ function Users() {
       const usersData = await getAllUsers()
       setUsers(usersData)
     } catch (err: any) {
-      console.error('Error deleting user:', err)
+('Error deleting user:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
     }
   }

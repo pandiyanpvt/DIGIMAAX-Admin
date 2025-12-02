@@ -76,7 +76,6 @@ export async function getAllProducts(params?: GetProductsParams): Promise<Produc
     }
     return Array.isArray(data) ? data : []
   } catch (error: any) {
-    console.error('Error fetching products:', error)
     throw error
   }
 }
@@ -88,7 +87,6 @@ export async function getProductById(id: number): Promise<Product> {
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error fetching product:', error)
     throw error
   }
 }
@@ -124,16 +122,6 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
       })
     }
 
-    // Log all FormData entries
-    console.log('FormData entries:')
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}:`, value.name, `(File, ${value.size} bytes)`)
-      } else {
-        console.log(`${key}:`, value)
-      }
-    }
-
     const { data } = await apiClient.post('/api/products', formData, {
       headers: {
         'Content-Type': undefined as any,
@@ -142,8 +130,6 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error creating product:', error)
-    console.error('Response data:', error?.response?.data)
     throw error
   }
 }
@@ -172,8 +158,6 @@ export async function updateProduct(payload: UpdateProductPayload): Promise<Prod
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error updating product:', error)
-    console.error('Response data:', error?.response?.data)
     throw error
   }
 }
@@ -192,7 +176,6 @@ export async function changePrimaryImage(productId: number, image: File): Promis
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error changing primary image:', error)
     throw error
   }
 }
@@ -213,7 +196,6 @@ export async function addAdditionalImages(productId: number, images: File[]): Pr
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error adding additional images:', error)
     throw error
   }
 }
@@ -223,7 +205,6 @@ export async function deleteProduct(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/products/${id}`)
   } catch (error: any) {
-    console.error('Error deleting product:', error)
     throw error
   }
 }
@@ -233,7 +214,6 @@ export async function deleteProductImage(imageId: number): Promise<void> {
   try {
     await apiClient.delete(`/api/products/images/${imageId}`)
   } catch (error: any) {
-    console.error('Error deleting product image:', error)
     throw error
   }
 }

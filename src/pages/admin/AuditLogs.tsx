@@ -56,7 +56,7 @@ function AuditLogs() {
           setLogs([])
         }
       } catch (err: any) {
-        console.warn('Audit log endpoint not available yet.', err)
+('Audit log endpoint not available yet.', err)
         setError(
           'Audit log service is not available on the backend. Please implement /api/audit-logs to enable this view.'
         )

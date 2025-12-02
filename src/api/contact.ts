@@ -42,7 +42,7 @@ export async function getAllContactMessages(): Promise<ContactMessage[]> {
     // Backend returns { message, count, contacts }
     return Array.isArray(data?.contacts) ? data.contacts : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-    console.error('Error fetching contact messages:', error)
+('Error fetching contact messages:', error)
     throw error
   }
 }
@@ -54,7 +54,7 @@ export async function getContactMessageById(id: number): Promise<ContactMessage>
     // Backend returns { message, contact }
     return data?.contact || data
   } catch (error: any) {
-    console.error('Error fetching contact message:', error)
+('Error fetching contact message:', error)
     throw error
   }
 }
@@ -66,7 +66,7 @@ export async function createContactMessage(payload: CreateContactPayload): Promi
     // Backend returns { message, contact }
     return data?.contact || data
   } catch (error: any) {
-    console.error('Error creating contact message:', error)
+('Error creating contact message:', error)
     throw error
   }
 }
@@ -78,7 +78,7 @@ export async function getContactMessagesByEmail(email: string): Promise<ContactM
     // Backend returns { message, count, contacts }
     return Array.isArray(data?.contacts) ? data.contacts : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-    console.error('Error fetching contact messages:', error)
+('Error fetching contact messages:', error)
     throw error
   }
 }
@@ -90,7 +90,7 @@ export async function getContactMessagesByServiceInterest(serviceInterest: strin
     // Backend returns { message, count, contacts }
     return Array.isArray(data?.contacts) ? data.contacts : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-    console.error('Error fetching contact messages by service interest:', error)
+('Error fetching contact messages by service interest:', error)
     throw error
   }
 }
@@ -102,7 +102,7 @@ export async function getContactMessagesByFullName(fullName: string): Promise<Co
     // Backend returns { message, count, contacts }
     return Array.isArray(data?.contacts) ? data.contacts : (Array.isArray(data) ? data : [])
   } catch (error: any) {
-    console.error('Error fetching contact messages by full name:', error)
+('Error fetching contact messages by full name:', error)
     throw error
   }
 }
@@ -114,7 +114,7 @@ export async function updateContactMessage(id: number, payload: Partial<ContactM
     // Backend returns { message, contact }
     return data?.contact || data
   } catch (error: any) {
-    console.error('Error updating contact message:', error)
+('Error updating contact message:', error)
     throw error
   }
 }
@@ -124,7 +124,7 @@ export async function deleteContactMessage(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/contact/delete/${id}`)
   } catch (error: any) {
-    console.error('Error deleting contact message:', error)
+('Error deleting contact message:', error)
     throw error
   }
 }
@@ -136,7 +136,7 @@ export async function markContactAsRead(id: number): Promise<ContactMessage> {
     // Backend returns { message, contact }
     return data?.contact || data
   } catch (error: any) {
-    console.error('Error marking contact as read:', error)
+('Error marking contact as read:', error)
     throw error
   }
 }
@@ -162,7 +162,7 @@ export async function replyToContact(
     const { data } = await apiClient.post<ReplyToContactResponse>(`/api/contact/reply/${id}`, payload)
     return data
   } catch (error: any) {
-    console.error('Error replying to contact:', error)
+('Error replying to contact:', error)
     throw error
   }
 }

@@ -74,7 +74,7 @@ function AdminsManagement() {
         setUserRoles(roles)
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to fetch admins')
-        console.error('Error fetching admins:', err)
+('Error fetching admins:', err)
       } finally {
         setLoading(false)
       }
@@ -161,7 +161,7 @@ function AdminsManagement() {
       })
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to save admin')
-      console.error('Error saving admin:', err)
+('Error saving admin:', err)
     }
   }
 
@@ -177,7 +177,7 @@ function AdminsManagement() {
         setAdmins(adminUsers)
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to delete admin')
-        console.error('Error deleting admin:', err)
+('Error deleting admin:', err)
       }
     }
   }

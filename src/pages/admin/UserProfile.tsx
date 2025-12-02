@@ -56,7 +56,7 @@ function UserProfile() {
           phoneNumber: userData.phoneNumber || '',
         })
       } catch (err: any) {
-        console.error('Error fetching profile:', err)
+('Error fetching profile:', err)
         setError(err?.response?.data?.message || err?.message || 'Failed to load profile')
         // Fallback to localStorage user data
         const localUser = getCurrentUser()
@@ -107,10 +107,9 @@ function UserProfile() {
           localStorage.setItem('adminAuth', JSON.stringify(authData))
         }
       } catch (err) {
-        console.error('Error updating localStorage:', err)
+('Error updating localStorage:', err)
       }
     } catch (err: any) {
-      console.error('Error updating profile:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to update profile')
     } finally {
       setSaving(false)

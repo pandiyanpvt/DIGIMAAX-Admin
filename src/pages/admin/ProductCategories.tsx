@@ -89,7 +89,7 @@ function ProductCategories() {
         const mappedCategories = backendCategories.map(mapBackendToFrontend)
         setCategories(mappedCategories)
       } catch (err: any) {
-        console.error('Error fetching categories:', err)
+('Error fetching categories:', err)
         setError(err?.response?.data?.error?.message || err?.message || 'Failed to load categories')
       } finally {
         setLoading(false)
@@ -176,7 +176,7 @@ function ProductCategories() {
       }
       setSelectedCategory(null)
     } catch (err: any) {
-      console.error('Error saving category:', err)
+('Error saving category:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to save category')
     } finally {
       setSaving(false)
@@ -194,7 +194,7 @@ function ProductCategories() {
       setCategories(categories.filter((c) => c.id !== id))
       setSuccessMessage('Category deleted successfully!')
     } catch (err: any) {
-      console.error('Error deleting category:', err)
+('Error deleting category:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete category')
     }
   }

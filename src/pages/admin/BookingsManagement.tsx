@@ -289,7 +289,7 @@ DIGIMAAX Team`,
 
   const handleSendEmail = () => {
     // Here you would integrate with your email service/API
-    console.log('Sending email:', emailData)
+('Sending email:', emailData)
     // Example: await sendEmailAPI(emailData)
     alert(`Email sent to ${emailData.to}`)
     setEmailDialogOpen(false)

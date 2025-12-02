@@ -70,7 +70,7 @@ function ContactMessages() {
         const data = await getAllContactMessages()
         setMessages(data)
       } catch (err: any) {
-        console.error('Error fetching contact messages:', err)
+('Error fetching contact messages:', err)
         setError(err?.response?.data?.message || 'Failed to fetch contact messages')
       } finally {
         setLoading(false)
@@ -111,7 +111,7 @@ function ContactMessages() {
         await handleMarkAsRead(fullMessage.id)
       }
     } catch (err: any) {
-      console.error('Error fetching message details:', err)
+('Error fetching message details:', err)
       // Fallback to showing the message we already have
       setSelectedMessage(message)
       setViewDialogOpen(true)
@@ -134,7 +134,7 @@ function ContactMessages() {
         setSelectedMessage(updatedMessage)
       }
     } catch (err: any) {
-      console.error('Error marking message as read:', err)
+('Error marking message as read:', err)
       setError(err?.response?.data?.message || 'Failed to mark message as read')
     } finally {
       setMarkingAsRead(null)
@@ -152,7 +152,7 @@ function ContactMessages() {
       setMessages(messages.filter((m) => m.id !== id))
       setSuccessMessage('Message deleted successfully')
     } catch (err: any) {
-      console.error('Error deleting message:', err)
+('Error deleting message:', err)
       setError(err?.response?.data?.message || 'Failed to delete message')
     }
   }
@@ -190,7 +190,7 @@ function ContactMessages() {
         setSelectedMessage(updatedMessage)
       }
     } catch (err: any) {
-      console.error('Error sending reply:', err)
+('Error sending reply:', err)
       setError(err?.response?.data?.message || 'Failed to send reply')
     } finally {
       setReplying(false)

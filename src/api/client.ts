@@ -13,13 +13,10 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   try {
-    const stored = localStorage.getItem('adminAuth')
-    if (stored) {
-      const { token } = JSON.parse(stored)
-      if (token) {
-        config.headers = config.headers || {}
-        ;(config.headers as any).Authorization = `Bearer ${token}`
-      }
+    const authData = getAdminAuthToken()
+    if (authData?.token) {
+      config.headers = config.headers || {}
+      ;(config.headers as any).Authorization = `Bearer ${authData.token}`
     }
   } catch {}
   return config
@@ -29,24 +26,44 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.code === 'ECONNREFUSED' || error.message?.includes('Network Error')) {
-      console.error('API Connection Error: Backend server is not running or unreachable.')
-      console.error('Please ensure your backend server is running on:', baseURL)
-    }
+    // Connection errors are handled silently in production
     return Promise.reject(error)
   }
 )
 
-export const setAdminAuthToken = (token: string, user: any) => {
+export const setAdminAuthToken = (token: string, user: any, rememberMe: boolean = false) => {
   try {
-    localStorage.setItem('adminAuth', JSON.stringify({ token, user }))
+    const authData = { token, user, rememberMe }
+    if (rememberMe) {
+      // Store in localStorage for persistent login
+      localStorage.setItem('adminAuth', JSON.stringify(authData))
+    } else {
+      // Store in sessionStorage for session-only login
+      sessionStorage.setItem('adminAuth', JSON.stringify(authData))
+      // Clear localStorage if it exists (in case user unchecks remember me)
+      localStorage.removeItem('adminAuth')
+    }
   } catch {}
 }
 
 export const clearAdminAuthToken = () => {
   try {
     localStorage.removeItem('adminAuth')
+    sessionStorage.removeItem('adminAuth')
   } catch {}
+}
+
+export const getAdminAuthToken = () => {
+  try {
+    // Check localStorage first (remember me), then sessionStorage
+    const stored = localStorage.getItem('adminAuth') || sessionStorage.getItem('adminAuth')
+    if (stored) {
+      return JSON.parse(stored)
+    }
+    return null
+  } catch {
+    return null
+  }
 }
 
 export default apiClient

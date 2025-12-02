@@ -53,7 +53,7 @@ export async function getSalesSummary(): Promise<SalesSummary> {
     }
     throw new Error(data.error?.message || 'Failed to fetch sales summary')
   } catch (error: any) {
-    console.error('Error fetching sales summary:', error)
+('Error fetching sales summary:', error)
     throw error
   }
 }
@@ -67,7 +67,7 @@ export async function getSalesGraph(): Promise<SalesGraphData> {
     }
     throw new Error(data.error?.message || 'Failed to fetch sales graph')
   } catch (error: any) {
-    console.error('Error fetching sales graph:', error)
+('Error fetching sales graph:', error)
     throw error
   }
 }

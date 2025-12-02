@@ -33,7 +33,7 @@ export async function getAllUserRoles(): Promise<UserRole[]> {
     // Fallback for direct array response
     return Array.isArray(data) ? data : []
   } catch (error: any) {
-    console.error('Error fetching user roles:', error)
+('Error fetching user roles:', error)
     throw error
   }
 }
@@ -44,7 +44,7 @@ export async function createUserRole(payload: CreateUserRolePayload): Promise<Us
     const { data } = await apiClient.post('/api/user-role/save', payload)
     return data
   } catch (error: any) {
-    console.error('Error creating user role:', error)
+('Error creating user role:', error)
     throw error
   }
 }
@@ -59,7 +59,7 @@ export async function updateUserRole(payload: UpdateUserRolePayload): Promise<Us
     })
     return data
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+('Error updating user role:', error)
     throw error
   }
 }
@@ -69,7 +69,7 @@ export async function deleteUserRole(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/user-role/delete/${id}`)
   } catch (error: any) {
-    console.error('Error deleting user role:', error)
+('Error deleting user role:', error)
     throw error
   }
 }

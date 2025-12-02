@@ -42,7 +42,6 @@ export async function getAllCategories(): Promise<ProductCategory[]> {
     }
     return Array.isArray(data) ? data : []
   } catch (error: any) {
-    console.error('Error fetching categories:', error)
     throw error
   }
 }
@@ -54,7 +53,6 @@ export async function getCategoryById(id: number): Promise<ProductCategory> {
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error fetching category:', error)
     throw error
   }
 }
@@ -66,7 +64,6 @@ export async function createCategory(payload: CreateCategoryPayload): Promise<Pr
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error creating category:', error)
     throw error
   }
 }
@@ -79,7 +76,6 @@ export async function updateCategory(payload: UpdateCategoryPayload): Promise<Pr
     // Backend returns { success: true, data: {...} }
     return data?.success ? data.data : data
   } catch (error: any) {
-    console.error('Error updating category:', error)
     throw error
   }
 }
@@ -89,7 +85,6 @@ export async function deleteCategory(id: number): Promise<void> {
   try {
     await apiClient.delete(`/api/categories/${id}`)
   } catch (error: any) {
-    console.error('Error deleting category:', error)
     throw error
   }
 }
