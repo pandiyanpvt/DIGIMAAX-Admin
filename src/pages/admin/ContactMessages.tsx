@@ -32,6 +32,7 @@ import {
   Reply as ReplyIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllContactMessages,
   getContactMessageById,
@@ -60,6 +61,9 @@ function ContactMessages() {
   const [markingAsRead, setMarkingAsRead] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [messageToDelete, setMessageToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch contact messages from backend
   useEffect(() => {
@@ -141,19 +145,29 @@ function ContactMessages() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this message?')) {
-      return
-    }
+  const handleDelete = (id: number) => {
+    setMessageToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (messageToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
-      await deleteContactMessage(id)
-      setMessages(messages.filter((m) => m.id !== id))
+      await deleteContactMessage(messageToDelete)
+      setMessages(messages.filter((m) => m.id !== messageToDelete))
       setSuccessMessage('Message deleted successfully')
+      setConfirmDialogOpen(false)
+      setMessageToDelete(null)
     } catch (err: any) {
       console.error('Error deleting message:', err)
       setError(err?.response?.data?.message || 'Failed to delete message')
+      setConfirmDialogOpen(false)
+      setMessageToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -663,6 +677,18 @@ function ContactMessages() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Message"
+        message="Are you sure you want to delete this message? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setMessageToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

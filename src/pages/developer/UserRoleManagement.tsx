@@ -30,6 +30,7 @@ import {
   AdminPanelSettings as RoleIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllUserRoles,
   createUserRole,
@@ -57,6 +58,9 @@ function UserRoleManagement() {
     name: '',
     is_active: true,
   })
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [roleToDelete, setRoleToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch roles on mount
   useEffect(() => {
@@ -161,22 +165,32 @@ function UserRoleManagement() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this role?')) {
-      return
-    }
+  const handleDelete = (id: number) => {
+    setRoleToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (roleToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
-      await deleteUserRole(id)
-      setRoles(roles.filter((r) => r.id !== id))
+      await deleteUserRole(roleToDelete)
+      setRoles(roles.filter((r) => r.id !== roleToDelete))
       const newCounts = { ...userCounts }
-      delete newCounts[id]
+      delete newCounts[roleToDelete]
       setUserCounts(newCounts)
       setSuccessMessage('User role deleted successfully!')
+      setConfirmDialogOpen(false)
+      setRoleToDelete(null)
     } catch (err: any) {
       console.error('Error deleting role:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to delete user role')
+      setConfirmDialogOpen(false)
+      setRoleToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -373,6 +387,18 @@ function UserRoleManagement() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Role"
+        message={`Are you sure you want to delete "${roles.find((r) => r.id === roleToDelete)?.name || 'this role'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setRoleToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

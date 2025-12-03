@@ -22,6 +22,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
 } from '@mui/material'
 import { Grid } from '@mui/material'
 import {
@@ -31,6 +33,7 @@ import {
   ContentCopy as CopyIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 
 const samplePromotions = [
   {
@@ -63,6 +66,11 @@ function PromotionsManagement() {
   const [promotions, setPromotions] = useState(samplePromotions)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingPromo, setEditingPromo] = useState<any>(null)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [promotionToDelete, setPromotionToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -137,8 +145,29 @@ function PromotionsManagement() {
   }
 
   const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this promotion?')) {
-      setPromotions(promotions.filter((p) => p.id !== id))
+    setPromotionToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (promotionToDelete === null) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      // TODO: Replace with actual API call when available
+      // await deletePromotion(promotionToDelete)
+      setPromotions(promotions.filter((p) => p.id !== promotionToDelete))
+      setSuccessMessage('Promotion deleted successfully')
+      setConfirmDialogOpen(false)
+      setPromotionToDelete(null)
+    } catch (err: any) {
+      console.error('Error deleting promotion:', err)
+      setError(err?.response?.data?.message || 'Failed to delete promotion')
+      setConfirmDialogOpen(false)
+      setPromotionToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -342,6 +371,40 @@ function PromotionsManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Promotion"
+        message={`Are you sure you want to delete "${promotions.find((p) => p.id === promotionToDelete)?.title || 'this promotion'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setPromotionToDelete(null)
+        }}
+        loading={deleting}
+      />
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </PageContainer>
   )
 }

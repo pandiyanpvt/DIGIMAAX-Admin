@@ -12,6 +12,7 @@ import {
   AdminPanelSettings as RoleIcon,
   Person as PersonIcon,
   History as LogsIcon,
+  Build as ServiceIcon,
 } from '@mui/icons-material'
 
 interface MenuItem {
@@ -39,6 +40,7 @@ const menuItems: MenuItem[] = [
   { id: 'social-media', label: 'Social Media', icon: <SocialIcon />, shortLabel: 'Social' },
   { id: 'product-categories', label: 'Categories', icon: <CategoryIcon />, shortLabel: 'Categories' },
   { id: 'products', label: 'Products', icon: <ProductIcon />, shortLabel: 'Products' },
+  { id: 'services', label: 'Services', icon: <ServiceIcon />, shortLabel: 'Services' },
   // Dev View
   { id: 'users', label: 'Users', icon: <PersonIcon />, shortLabel: 'Users' },
   { id: 'user-roles', label: 'User Roles', icon: <RoleIcon />, shortLabel: 'Roles' },

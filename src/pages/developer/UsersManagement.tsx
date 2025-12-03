@@ -31,6 +31,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { getCurrentUserRole, rolePermissions } from '../../constants/roles'
 import { getAllUsers, updateUser, deleteUser, type User } from '../../api/users'
 import { registerAdmin } from '../../api/auth'
@@ -58,6 +59,9 @@ function UsersManagement() {
     userRoleId: 2, // Default to User role (ID 2)
     password: '',
   })
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch users and roles on mount
   useEffect(() => {
@@ -168,20 +172,32 @@ function UsersManagement() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this shop worker?')) {
-      try {
-        setError(null)
-        await deleteUser(id)
-        
-        // Refresh users list
-        const usersData = await getAllUsers()
-        const shopWorkers = usersData.filter(user => user.userRoleId === 2)
-        setUsers(shopWorkers)
-      } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
-        console.error('Error deleting user:', err)
-      }
+  const handleDelete = (id: number) => {
+    setUserToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (userToDelete === null) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      await deleteUser(userToDelete)
+      
+      // Refresh users list
+      const usersData = await getAllUsers()
+      const shopWorkers = usersData.filter(user => user.userRoleId === 2)
+      setUsers(shopWorkers)
+      setConfirmDialogOpen(false)
+      setUserToDelete(null)
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
+      console.error('Error deleting user:', err)
+      setConfirmDialogOpen(false)
+      setUserToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -386,6 +402,18 @@ function UsersManagement() {
           </DialogActions>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Shop Worker"
+        message={`Are you sure you want to delete "${users.find((u) => u.id === userToDelete)?.firstName || users.find((u) => u.id === userToDelete)?.email || 'this shop worker'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setUserToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

@@ -31,6 +31,7 @@ import {
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { getCurrentUserRole } from '../../constants/roles'
 import { getAllUsers, updateUser, deleteUser, type User } from '../../api/users'
 import { registerAdmin } from '../../api/auth'
@@ -52,6 +53,9 @@ function AdminsManagement() {
     userRoleId: 1, // Default to Admin role (ID 1)
     password: '',
   })
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [adminToDelete, setAdminToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const currentRole = getCurrentUserRole()
   const canEdit = currentRole === 'superadmin'
@@ -165,20 +169,32 @@ function AdminsManagement() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this admin?')) {
-      try {
-        setError(null)
-        await deleteUser(id)
-        
-        // Refresh admins list
-        const usersData = await getAllUsers()
-        const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
-        setAdmins(adminUsers)
-      } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'Failed to delete admin')
-        console.error('Error deleting admin:', err)
-      }
+  const handleDelete = (id: number) => {
+    setAdminToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (adminToDelete === null) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      await deleteUser(adminToDelete)
+      
+      // Refresh admins list
+      const usersData = await getAllUsers()
+      const adminUsers = usersData.filter(user => user.userRoleId === 1 || user.userRoleId === 3)
+      setAdmins(adminUsers)
+      setConfirmDialogOpen(false)
+      setAdminToDelete(null)
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to delete admin')
+      console.error('Error deleting admin:', err)
+      setConfirmDialogOpen(false)
+      setAdminToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -407,6 +423,18 @@ function AdminsManagement() {
           </DialogActions>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Admin"
+        message={`Are you sure you want to delete "${admins.find((a) => a.id === adminToDelete)?.firstName || admins.find((a) => a.id === adminToDelete)?.email || 'this admin'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setAdminToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

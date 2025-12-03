@@ -3,6 +3,7 @@ import apiClient from './client'
 export interface ProductCategory {
   id: number
   name: string
+  name_french?: string
   is_active?: boolean | number
   product_count?: number
   customization_color?: boolean | number
@@ -15,6 +16,7 @@ export interface ProductCategory {
 
 export interface CreateCategoryPayload {
   name: string
+  name_french?: string
   is_active?: boolean
   customization_color?: boolean
   customization_size?: boolean
@@ -25,6 +27,7 @@ export interface CreateCategoryPayload {
 export interface UpdateCategoryPayload {
   id: number
   name?: string
+  name_french?: string
   is_active?: boolean
   customization_color?: boolean
   customization_size?: boolean

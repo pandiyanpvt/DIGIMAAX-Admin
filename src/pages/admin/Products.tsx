@@ -36,6 +36,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllProducts,
   getProductById,
@@ -54,6 +55,7 @@ interface ProductDisplay {
   id: number
   name: string
   title: string
+  titleFrench?: string
   category: string
   categoryId?: number
   price: number
@@ -63,8 +65,10 @@ interface ProductDisplay {
   isActive: boolean
   createdAt: string
   shortDesc?: string
+  shortDescFrench?: string
   isFeatured?: boolean
   description?: string
+  descriptionFrench?: string
   badge?: string
 }
 
@@ -77,6 +81,7 @@ const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
     id: backendProduct.id,
     name: backendProduct.title, // Use title as name for display
     title: backendProduct.title,
+    titleFrench: backendProduct.title_french || '',
     category: backendProduct.category_name || backendProduct.category?.name || 'Uncategorized',
     categoryId: backendProduct.category_id || backendProduct.category?.id,
     price: typeof backendProduct.price === 'string' ? parseFloat(backendProduct.price) : (backendProduct.price || 0),
@@ -98,7 +103,9 @@ const mapBackendToFrontend = (backendProduct: Product): ProductDisplay => {
     })(),
     createdAt: backendProduct.created_at ? new Date(backendProduct.created_at).toISOString().split('T')[0] : '',
     shortDesc: backendProduct.short_desc || '',
+    shortDescFrench: backendProduct.short_desc_french || '',
     description: backendProduct.description || '',
+    descriptionFrench: backendProduct.description_french || '',
     isFeatured: backendProduct.is_featured ?? false,
   }
 }
@@ -123,6 +130,13 @@ function Products() {
   const [selectedProductForImage, setSelectedProductForImage] = useState<ProductDisplay | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [, setImagesToDelete] = useState<number[]>([])
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [confirmDialogConfig, setConfirmDialogConfig] = useState<{
+    title: string
+    message: string
+    onConfirm: () => void
+  } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch products and categories on mount
   useEffect(() => {
@@ -167,9 +181,12 @@ function Products() {
       matchesSearch = (
         p.name.toLowerCase().includes(searchLower) ||
         p.title.toLowerCase().includes(searchLower) ||
+        (p.titleFrench && p.titleFrench.toLowerCase().includes(searchLower)) ||
         p.category.toLowerCase().includes(searchLower) ||
         (p.description && p.description.toLowerCase().includes(searchLower)) ||
+        (p.descriptionFrench && p.descriptionFrench.toLowerCase().includes(searchLower)) ||
         (p.shortDesc && p.shortDesc.toLowerCase().includes(searchLower)) ||
+        (p.shortDescFrench && p.shortDescFrench.toLowerCase().includes(searchLower)) ||
         (p.badge && p.badge.toLowerCase().includes(searchLower)) ||
         (isNumeric && (
           p.price.toString().includes(searchTerm) ||
@@ -186,6 +203,7 @@ function Products() {
       id: 0, // Temporary ID for new product
       name: '',
       title: '',
+      titleFrench: '',
       category: '',
       categoryId: undefined,
       price: 0,
@@ -194,7 +212,9 @@ function Products() {
       isActive: true,
       createdAt: '',
       shortDesc: '',
+      shortDescFrench: '',
       description: '',
+      descriptionFrench: '',
       isFeatured: false,
     })
     setSelectedFile(null)
@@ -297,6 +317,9 @@ function Products() {
         title: selectedProduct.title,
         price: selectedProduct.price,
       }
+      if (selectedProduct.titleFrench) {
+        productPayload.title_french = selectedProduct.titleFrench
+      }
 
       // Optional fields - only include if they have values
       if (selectedProduct.categoryId) {
@@ -309,8 +332,14 @@ function Products() {
       if (selectedProduct.shortDesc) {
         productPayload.short_desc = selectedProduct.shortDesc
       }
+      if (selectedProduct.shortDescFrench) {
+        productPayload.short_desc_french = selectedProduct.shortDescFrench
+      }
       if (selectedProduct.description) {
         productPayload.description = selectedProduct.description
+      }
+      if (selectedProduct.descriptionFrench) {
+        productPayload.description_french = selectedProduct.descriptionFrench
       }
       if (selectedProduct.badge) {
         productPayload.badge = selectedProduct.badge
@@ -368,49 +397,69 @@ function Products() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return
-    }
-
-    try {
-      setError(null)
-      await deleteProduct(id)
-      setProducts(products.filter((p) => p.id !== id))
-      setSuccessMessage('Product deleted successfully!')
-    } catch (err: any) {
-      console.error('Error deleting product:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete product')
-    }
+  const handleDelete = (id: number) => {
+    const product = products.find((p) => p.id === id)
+    setConfirmDialogConfig({
+      title: 'Delete Product',
+      message: `Are you sure you want to delete "${product?.name || 'this product'}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          setDeleting(true)
+          setError(null)
+          await deleteProduct(id)
+          setProducts(products.filter((p) => p.id !== id))
+          setSuccessMessage('Product deleted successfully!')
+          setConfirmDialogOpen(false)
+          setConfirmDialogConfig(null)
+        } catch (err: any) {
+          console.error('Error deleting product:', err)
+          setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete product')
+          setConfirmDialogOpen(false)
+          setConfirmDialogConfig(null)
+        } finally {
+          setDeleting(false)
+        }
+      },
+    })
+    setConfirmDialogOpen(true)
   }
 
 
-  const handleDeleteImage = async (imageId: number) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) {
-      return
-    }
-
-    try {
-      setDeletingImageId(imageId)
-      setError(null)
-      await deleteProductImage(imageId)
-      
-      // Refresh product details to get updated image list
-      if (selectedProductForImage && selectedProductForImage.id) {
-        const fullProduct = await getProductById(selectedProductForImage.id)
-        const mappedProduct = mapBackendToFrontend(fullProduct)
-        setSelectedProductForImage(mappedProduct)
-      }
-      
-      // Also update the products list
-      setRefreshKey((k) => k + 1)
-      setSuccessMessage('Image deleted successfully')
-    } catch (err: any) {
-      console.error('Error deleting image:', err)
-      setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete image')
-    } finally {
-      setDeletingImageId(null)
-    }
+  const handleDeleteImage = (imageId: number) => {
+    setConfirmDialogConfig({
+      title: 'Delete Product Image',
+      message: 'Are you sure you want to delete this image? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          setDeleting(true)
+          setDeletingImageId(imageId)
+          setError(null)
+          await deleteProductImage(imageId)
+          
+          // Refresh product details to get updated image list
+          if (selectedProductForImage && selectedProductForImage.id) {
+            const fullProduct = await getProductById(selectedProductForImage.id)
+            const mappedProduct = mapBackendToFrontend(fullProduct)
+            setSelectedProductForImage(mappedProduct)
+          }
+          
+          // Also update the products list
+          setRefreshKey((k) => k + 1)
+          setSuccessMessage('Image deleted successfully')
+          setConfirmDialogOpen(false)
+          setConfirmDialogConfig(null)
+        } catch (err: any) {
+          console.error('Error deleting image:', err)
+          setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete image')
+          setConfirmDialogOpen(false)
+          setConfirmDialogConfig(null)
+        } finally {
+          setDeletingImageId(null)
+          setDeleting(false)
+        }
+      },
+    })
+    setConfirmDialogOpen(true)
   }
 
   const handleManageImages = async (product: ProductDisplay) => {
@@ -566,10 +615,11 @@ function Products() {
           </Box>
         ) : (
           <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
-          <Table sx={{ minWidth: 800 }}>
+          <Table sx={{ minWidth: 860 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Product</TableCell>
+                <TableCell>Product (EN)</TableCell>
+                <TableCell>Product (FR)</TableCell>
                 <TableCell>Category</TableCell>
                 <TableCell>Price</TableCell>
                 <TableCell>Stock</TableCell>
@@ -608,6 +658,17 @@ function Products() {
                         {product.name}
                       </Typography>
                     </Box>
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 240 }}>
+                    {product.titleFrench ? (
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {product.titleFrench}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.disabled">
+                        —
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip label={product.category} size="small" />
@@ -707,6 +768,15 @@ function Products() {
                 sx={{ mb: 2 }}
                 required
               />
+              <TextField
+                fullWidth
+                label="Product Title (French)"
+                value={selectedProduct.titleFrench || ''}
+                onChange={(e) =>
+                  setSelectedProduct({ ...selectedProduct, titleFrench: e.target.value })
+                }
+                sx={{ mb: 2 }}
+              />
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -774,10 +844,32 @@ function Products() {
               />
               <TextField
                 fullWidth
+                label="Short Description (French)"
+                value={selectedProduct.shortDescFrench || ''}
+                onChange={(e) =>
+                  setSelectedProduct({ ...selectedProduct, shortDescFrench: e.target.value })
+                }
+                multiline
+                rows={2}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
                 label="Description"
                 value={selectedProduct.description || ''}
                 onChange={(e) =>
                   setSelectedProduct({ ...selectedProduct, description: e.target.value })
+                }
+                multiline
+                rows={4}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Description (French)"
+                value={selectedProduct.descriptionFrench || ''}
+                onChange={(e) =>
+                  setSelectedProduct({ ...selectedProduct, descriptionFrench: e.target.value })
                 }
                 multiline
                 rows={4}
@@ -1128,6 +1220,20 @@ function Products() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {confirmDialogConfig && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          title={confirmDialogConfig.title}
+          message={confirmDialogConfig.message}
+          onConfirm={confirmDialogConfig.onConfirm}
+          onCancel={() => {
+            setConfirmDialogOpen(false)
+            setConfirmDialogConfig(null)
+          }}
+          loading={deleting}
+        />
+      )}
     </PageContainer>
   )
 }
