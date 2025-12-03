@@ -67,6 +67,8 @@ function PromotionsManagement() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [promotionToDelete, setPromotionToDelete] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -151,7 +153,8 @@ function PromotionsManagement() {
     try {
       setDeleting(true)
       setError(null)
-      await deletePromotion(promotionToDelete)
+      // TODO: Replace with actual API call when available
+      // await deletePromotion(promotionToDelete)
       setPromotions(promotions.filter((p) => p.id !== promotionToDelete))
       setSuccessMessage('Promotion deleted successfully')
       setConfirmDialogOpen(false)

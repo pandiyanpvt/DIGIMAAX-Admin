@@ -174,7 +174,6 @@ function GalleryManagement() {
   }
 
   const handleDelete = (id: number) => {
-    const item = media.find((m) => m.id === id)
     setItemToDelete(id)
     setConfirmDialogOpen(true)
   }

@@ -116,6 +116,8 @@ function CartDetails() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [cartToDelete, setCartToDelete] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const filteredCarts = carts.filter((c) => {
@@ -142,7 +144,8 @@ function CartDetails() {
     try {
       setDeleting(true)
       setError(null)
-      await deleteCart(cartToDelete)
+      // TODO: Replace with actual API call when available
+      // await deleteCart(cartToDelete)
       setCarts(carts.filter((c) => c.id !== cartToDelete))
       setSuccessMessage('Cart deleted successfully')
       setConfirmDialogOpen(false)

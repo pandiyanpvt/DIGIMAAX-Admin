@@ -93,11 +93,16 @@ function CustomersManagement() {
     setConfirmDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (customerToDelete === null) return
-    setCustomers(customers.filter((c) => c.id !== customerToDelete))
-    setConfirmDialogOpen(false)
-    setCustomerToDelete(null)
+    try {
+      setDeleting(true)
+      setCustomers(customers.filter((c) => c.id !== customerToDelete))
+      setConfirmDialogOpen(false)
+      setCustomerToDelete(null)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleExport = () => {
