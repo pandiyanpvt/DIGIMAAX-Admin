@@ -23,6 +23,7 @@ import {
   CloudUpload as UploadIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllHeaderImages,
   createHeaderImage,
@@ -53,6 +54,9 @@ function HeaderImages() {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch header images from backend
   useEffect(() => {
@@ -148,19 +152,29 @@ function HeaderImages() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this header image?')) {
-      return
-    }
+  const handleDelete = (id: number) => {
+    setImageToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (imageToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
-      await deleteHeaderImage(id)
-      setImages(images.filter((img) => img.id !== id))
+      await deleteHeaderImage(imageToDelete)
+      setImages(images.filter((img) => img.id !== imageToDelete))
       setSuccessMessage('Header image deleted successfully')
+      setConfirmDialogOpen(false)
+      setImageToDelete(null)
     } catch (err: any) {
       console.error('Error deleting header image:', err)
       setError(err?.response?.data?.message || 'Failed to delete header image')
+      setConfirmDialogOpen(false)
+      setImageToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -408,6 +422,18 @@ function HeaderImages() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Header Image"
+        message="Are you sure you want to delete this header image? This action cannot be undone."
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setImageToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

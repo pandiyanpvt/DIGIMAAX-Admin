@@ -24,6 +24,7 @@ import {
   CloudUpload as UploadIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllGalleryImages,
   createGalleryImage,
@@ -45,12 +46,17 @@ function GalleryManagement() {
   const [uploading, setUploading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
+    name_french: '',
     description: '',
+    description_french: '',
     img_url: '',
     is_active: true,
   })
 
   const [refreshKey, setRefreshKey] = useState(0)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch gallery images from backend
   useEffect(() => {
@@ -72,7 +78,7 @@ function GalleryManagement() {
   }, [refreshKey])
 
   const handleUpload = () => {
-    setFormData({ name: '', description: '', img_url: '', is_active: true })
+    setFormData({ name: '', name_french: '', description: '', description_french: '', img_url: '', is_active: true })
     setSelectedMedia(null)
     setUploadDialogOpen(true)
   }
@@ -81,7 +87,9 @@ function GalleryManagement() {
     setSelectedMedia(item)
     setFormData({
       name: item.name,
+      name_french: item.name_french || '',
       description: item.description || '',
+      description_french: item.description_french || '',
       img_url: item.img_url,
       is_active: item.is_active,
     })
@@ -124,6 +132,8 @@ function GalleryManagement() {
           id: selectedMedia.id,
           name: formData.name,
           description: formData.description || undefined,
+          name_french: formData.name_french || undefined,
+          description_french: formData.description_french || undefined,
           is_active: formData.is_active,
         }
 
@@ -142,6 +152,8 @@ function GalleryManagement() {
           image: selectedFile!,
           name: formData.name,
           description: formData.description || undefined,
+          name_french: formData.name_french || undefined,
+          description_french: formData.description_french || undefined,
           is_active: formData.is_active,
         }
 
@@ -150,7 +162,7 @@ function GalleryManagement() {
         setUploadDialogOpen(false)
         setRefreshKey((k) => k + 1) // Refresh gallery list
       }
-      setFormData({ name: '', description: '', img_url: '', is_active: true })
+      setFormData({ name: '', name_french: '', description: '', description_french: '', img_url: '', is_active: true })
       setSelectedMedia(null)
       setSelectedFile(null)
     } catch (err: any) {
@@ -161,19 +173,30 @@ function GalleryManagement() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this gallery item?')) {
-      return
-    }
+  const handleDelete = (id: number) => {
+    const item = media.find((m) => m.id === id)
+    setItemToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (itemToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
-      await deleteGalleryImage(id)
-      setMedia(media.filter((m) => m.id !== id))
+      await deleteGalleryImage(itemToDelete)
+      setMedia(media.filter((m) => m.id !== itemToDelete))
       setSuccessMessage('Gallery item deleted successfully')
+      setConfirmDialogOpen(false)
+      setItemToDelete(null)
     } catch (err: any) {
       console.error('Error deleting gallery item:', err)
       setError(err?.response?.data?.message || 'Failed to delete gallery item')
+      setConfirmDialogOpen(false)
+      setItemToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -296,9 +319,27 @@ function GalleryManagement() {
             />
             <TextField
               fullWidth
+              label="Name (French)"
+              value={formData.name_french}
+              onChange={(e) => setFormData({ ...formData, name_french: e.target.value })}
+              sx={{ mb: 2 }}
+              disabled={uploading}
+            />
+            <TextField
+              fullWidth
               label="Description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+              disabled={uploading}
+            />
+            <TextField
+              fullWidth
+              label="Description (French)"
+              value={formData.description_french}
+              onChange={(e) => setFormData({ ...formData, description_french: e.target.value })}
               multiline
               rows={3}
               sx={{ mb: 2 }}
@@ -376,9 +417,27 @@ function GalleryManagement() {
             />
             <TextField
               fullWidth
+              label="Name (French)"
+              value={formData.name_french}
+              onChange={(e) => setFormData({ ...formData, name_french: e.target.value })}
+              sx={{ mb: 2 }}
+              disabled={uploading}
+            />
+            <TextField
+              fullWidth
               label="Description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+              disabled={uploading}
+            />
+            <TextField
+              fullWidth
+              label="Description (French)"
+              value={formData.description_french}
+              onChange={(e) => setFormData({ ...formData, description_french: e.target.value })}
               multiline
               rows={3}
               sx={{ mb: 2 }}
@@ -461,6 +520,18 @@ function GalleryManagement() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Gallery Item"
+        message={`Are you sure you want to delete "${media.find((m) => m.id === itemToDelete)?.name || 'this gallery item'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setItemToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

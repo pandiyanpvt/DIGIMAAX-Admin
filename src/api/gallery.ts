@@ -3,7 +3,9 @@ import apiClient from './client'
 export interface GalleryImage {
   id: number
   name: string
+  name_french?: string
   description?: string
+  description_french?: string
   img_url: string
   is_active: boolean
   created_at: string
@@ -13,7 +15,9 @@ export interface GalleryImage {
 export interface CreateGalleryPayload {
   image: File
   name: string
+  name_french?: string
   description?: string
+  description_french?: string
   is_active?: boolean
 }
 
@@ -21,7 +25,9 @@ export interface UpdateGalleryPayload {
   id: number
   image?: File
   name?: string
+  name_french?: string
   description?: string
+  description_french?: string
   is_active?: boolean
 }
 
@@ -55,7 +61,9 @@ export async function createGalleryImage(payload: CreateGalleryPayload): Promise
     const formData = new FormData()
     formData.append('image', payload.image)
     formData.append('name', payload.name)
+    if (payload.name_french) formData.append('name_french', payload.name_french)
     if (payload.description) formData.append('description', payload.description)
+    if (payload.description_french) formData.append('description_french', payload.description_french)
     formData.append('is_active', payload.is_active ? 'true' : 'false')
 
     // Must set Content-Type to undefined to let browser set it with boundary for FormData
@@ -78,7 +86,9 @@ export async function updateGalleryImage(payload: UpdateGalleryPayload): Promise
     const formData = new FormData()
     if (payload.image) formData.append('image', payload.image)
     if (payload.name !== undefined) formData.append('name', payload.name)
+    if (payload.name_french !== undefined) formData.append('name_french', payload.name_french)
     if (payload.description !== undefined) formData.append('description', payload.description)
+    if (payload.description_french !== undefined) formData.append('description_french', payload.description_french)
     if (payload.is_active !== undefined) formData.append('is_active', payload.is_active ? 'true' : 'false')
 
     // Must set Content-Type to undefined to let browser set it with boundary for FormData

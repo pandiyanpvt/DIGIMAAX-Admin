@@ -29,6 +29,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 
 const sampleCustomers = [
   {
@@ -57,6 +58,9 @@ function CustomersManagement() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [customerToDelete, setCustomerToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const filteredCustomers = customers.filter(
     (c) =>
@@ -85,9 +89,15 @@ function CustomersManagement() {
   }
 
   const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this customer?')) {
-      setCustomers(customers.filter((c) => c.id !== id))
-    }
+    setCustomerToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (customerToDelete === null) return
+    setCustomers(customers.filter((c) => c.id !== customerToDelete))
+    setConfirmDialogOpen(false)
+    setCustomerToDelete(null)
   }
 
   const handleExport = () => {
@@ -332,6 +342,18 @@ function CustomersManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Customer"
+        message={`Are you sure you want to delete "${customers.find((c) => c.id === customerToDelete)?.name || 'this customer'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setCustomerToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

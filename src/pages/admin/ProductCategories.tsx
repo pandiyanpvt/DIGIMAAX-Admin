@@ -29,6 +29,7 @@ import {
   Category as CategoryIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import {
   getAllCategories,
   createCategory,
@@ -41,6 +42,7 @@ import {
 interface CategoryDisplay {
   id: number
   name: string
+  nameFrench: string
   description?: string // Frontend-only, not saved to backend
   slug: string // Auto-generated from name, frontend-only
   isActive: boolean
@@ -56,6 +58,7 @@ interface CategoryDisplay {
 const mapBackendToFrontend = (backendCategory: ProductCategory): CategoryDisplay => ({
   id: backendCategory.id,
   name: backendCategory.name,
+  nameFrench: backendCategory.name_french || '',
   description: '', // Not in backend, keep empty
   slug: backendCategory.name.toLowerCase().replace(/\s+/g, '-'), // Auto-generate from name
   isActive: Boolean(backendCategory.is_active ?? true),
@@ -78,6 +81,9 @@ function ProductCategories() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Fetch categories from backend on mount
   useEffect(() => {
@@ -108,6 +114,7 @@ function ProductCategories() {
     setSelectedCategory({
       id: 0, // Temporary ID for new category
       name: '',
+      nameFrench: '',
       description: '',
       slug: '',
       isActive: true,
@@ -149,6 +156,7 @@ function ProductCategories() {
         const updated = await updateCategory({
           id: selectedCategory.id,
           name: selectedCategory.name,
+      name_french: selectedCategory.nameFrench || undefined,
           is_active: selectedCategory.isActive,
           customization_color: selectedCategory.customizationColor,
           customization_size: selectedCategory.customizationSize,
@@ -163,6 +171,7 @@ function ProductCategories() {
         // Create new category
         const created = await createCategory({
           name: selectedCategory.name,
+          name_french: selectedCategory.nameFrench || undefined,
           is_active: selectedCategory.isActive,
           customization_color: selectedCategory.customizationColor,
           customization_size: selectedCategory.customizationSize,
@@ -183,19 +192,29 @@ function ProductCategories() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) {
-      return
-    }
+  const handleDelete = (id: number) => {
+    setCategoryToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (categoryToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
-      await deleteCategory(id)
-      setCategories(categories.filter((c) => c.id !== id))
+      await deleteCategory(categoryToDelete)
+      setCategories(categories.filter((c) => c.id !== categoryToDelete))
       setSuccessMessage('Category deleted successfully!')
+      setConfirmDialogOpen(false)
+      setCategoryToDelete(null)
     } catch (err: any) {
       console.error('Error deleting category:', err)
       setError(err?.response?.data?.error?.message || err?.message || 'Failed to delete category')
+      setConfirmDialogOpen(false)
+      setCategoryToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -255,7 +274,8 @@ function ProductCategories() {
             <Table sx={{ minWidth: 600 }}>
             <TableHead>
               <TableRow>
-                <TableCell>Category</TableCell>
+                <TableCell>Category (EN)</TableCell>
+                <TableCell>Category (FR)</TableCell>
                 <TableCell>Products</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
@@ -275,6 +295,17 @@ function ProductCategories() {
                         </Typography>
                       </Box>
                     </Box>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 180 }}>
+                    {category.nameFrench ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {category.nameFrench}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.disabled">
+                        —
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip label={category.productCount} size="small" />
@@ -333,6 +364,13 @@ function ProductCategories() {
                 }}
                 sx={{ mb: 2 }}
                 required
+              />
+              <TextField
+                fullWidth
+                label="Category Name (French)"
+                value={selectedCategory.nameFrench}
+                onChange={(e) => setSelectedCategory({ ...selectedCategory, nameFrench: e.target.value })}
+                sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
@@ -429,6 +467,18 @@ function ProductCategories() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Category"
+        message={`Are you sure you want to delete "${categories.find((c) => c.id === categoryToDelete)?.name || 'this category'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setCategoryToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

@@ -35,6 +35,7 @@ import {
   VisibilityOff,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { getCurrentUserRole } from '../../constants/roles'
 import {
   getAllUsers,
@@ -57,6 +58,9 @@ function Users() {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [roleFilter, setRoleFilter] = useState<number | 'all'>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const currentRole = getCurrentUserRole()
 
@@ -210,21 +214,31 @@ function Users() {
     }
   }
 
-  const handleDelete = async (_id: number) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return
-    }
+  const handleDelete = (_id: number) => {
+    setUserToDelete(_id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (userToDelete === null) return
 
     try {
+      setDeleting(true)
       setError(null)
       // Note: Implement delete API call when available
       setSuccessMessage('User delete functionality - implement delete API call')
       // Refresh users list
       const usersData = await getAllUsers()
       setUsers(usersData)
+      setConfirmDialogOpen(false)
+      setUserToDelete(null)
     } catch (err: any) {
       console.error('Error deleting user:', err)
       setError(err?.response?.data?.message || err?.message || 'Failed to delete user')
+      setConfirmDialogOpen(false)
+      setUserToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -525,6 +539,18 @@ function Users() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete User"
+        message={`Are you sure you want to delete "${users.find((u) => u.id === userToDelete)?.firstName || users.find((u) => u.id === userToDelete)?.email || 'this user'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setUserToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

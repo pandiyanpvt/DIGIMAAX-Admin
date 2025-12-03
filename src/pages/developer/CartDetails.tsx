@@ -24,6 +24,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material'
 import PageContainer from '../../components/common/PageContainer'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 
 const sampleCarts = [
   {
@@ -112,6 +113,9 @@ function CartDetails() {
   const [selectedCart, setSelectedCart] = useState<any>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [cartToDelete, setCartToDelete] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const filteredCarts = carts.filter((c) => {
@@ -128,8 +132,28 @@ function CartDetails() {
   }
 
   const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this cart?')) {
-      setCarts(carts.filter((c) => c.id !== id))
+    setCartToDelete(id)
+    setConfirmDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (cartToDelete === null) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      await deleteCart(cartToDelete)
+      setCarts(carts.filter((c) => c.id !== cartToDelete))
+      setSuccessMessage('Cart deleted successfully')
+      setConfirmDialogOpen(false)
+      setCartToDelete(null)
+    } catch (err: any) {
+      console.error('Error deleting cart:', err)
+      setError(err?.response?.data?.message || 'Failed to delete cart')
+      setConfirmDialogOpen(false)
+      setCartToDelete(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -396,6 +420,18 @@ function CartDetails() {
           <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Delete Cart"
+        message={`Are you sure you want to delete cart #${cartToDelete}? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmDialogOpen(false)
+          setCartToDelete(null)
+        }}
+        loading={deleting}
+      />
     </PageContainer>
   )
 }

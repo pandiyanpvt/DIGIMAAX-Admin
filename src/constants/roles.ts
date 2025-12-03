@@ -43,6 +43,7 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
       'social-media',
       'product-categories',
       'products',
+      'services',
       'orders',
       'payments',
       // Dev View
@@ -72,6 +73,7 @@ export const rolePermissions: Record<UserRole, RolePermissionConfig> = {
       'social-media',
       'product-categories',
       'products',
+      'services',
       'orders',
       'payments',
       'logout',

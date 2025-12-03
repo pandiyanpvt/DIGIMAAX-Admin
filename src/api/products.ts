@@ -3,8 +3,11 @@ import apiClient from './client'
 export interface Product {
   id: number
   title: string
+  title_french?: string
   description?: string
+  description_french?: string
   short_desc?: string
+  short_desc_french?: string
   price: number
   primary_image?: string
   images?: Array<{ id: number; image_url: string; is_primary: boolean; sort_order: number }>
@@ -28,8 +31,11 @@ export interface Product {
 
 export interface CreateProductPayload {
   title: string
+  title_french?: string
   description?: string
+  description_french?: string
   short_desc?: string
+  short_desc_french?: string
   price: number
   category_id: number
   in_stock?: boolean
@@ -43,10 +49,13 @@ export interface CreateProductPayload {
 export interface UpdateProductPayload {
   id: number
   title?: string
+  title_french?: string
   category_id?: number
   price?: number
   short_desc?: string
+  short_desc_french?: string
   description?: string
+  description_french?: string
   badge?: string
   in_stock?: boolean
   stock_quantity?: number
@@ -98,13 +107,22 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
   try {
     const formData = new FormData()
     formData.append('title', payload.title)
+    if (payload.title_french) {
+      formData.append('title_french', payload.title_french)
+    }
     formData.append('price', payload.price.toString())
     formData.append('category_id', payload.category_id.toString())
     
     // Always send these fields with defaults if not provided
     formData.append('short_desc', payload.short_desc || payload.title)
+    if (payload.short_desc_french || payload.title_french) {
+      formData.append('short_desc_french', payload.short_desc_french || payload.title_french || payload.short_desc || payload.title)
+    }
     if (payload.description) {
       formData.append('description', payload.description)
+    }
+    if (payload.description_french) {
+      formData.append('description_french', payload.description_french)
     }
     if (payload.badge) {
       formData.append('badge', payload.badge)
@@ -156,12 +174,15 @@ export async function updateProduct(payload: UpdateProductPayload): Promise<Prod
     
     // Required fields
     if (payload.title) updateData.title = payload.title
+    if (payload.title_french !== undefined) updateData.title_french = payload.title_french
     if (payload.price !== undefined) updateData.price = payload.price
     
     // Optional fields - only send if provided
     if (payload.category_id !== undefined) updateData.category_id = payload.category_id
     if (payload.short_desc !== undefined) updateData.short_desc = payload.short_desc
+    if (payload.short_desc_french !== undefined) updateData.short_desc_french = payload.short_desc_french
     if (payload.description !== undefined) updateData.description = payload.description
+    if (payload.description_french !== undefined) updateData.description_french = payload.description_french
     if (payload.badge !== undefined) updateData.badge = payload.badge
     if (payload.in_stock !== undefined) updateData.in_stock = payload.in_stock
     if (payload.stock_quantity !== undefined) updateData.stock_quantity = payload.stock_quantity
